@@ -22,25 +22,35 @@ SLEEP = 0.4  # ~2.5 req/s
 QUERY_TIAB = '(hyaluronan[Title/Abstract] OR "hyaluronic acid"[Title/Abstract] OR hyaluronate[Title/Abstract] OR "Hyaluronic Acid"[MeSH Terms])'
 QUERY_ANY = '(hyaluronan OR "hyaluronic acid" OR hyaluronate)'
 
-def call(endpoint, params):
+def call(endpoint, params, tries=5):
     q = dict(PARAMS); q.update(params)
     url = f"{BASE}/{endpoint}?" + urllib.parse.urlencode(q)
-    req = urllib.request.Request(url, headers={"User-Agent": "hyaluronan-expert-llm/0.1"})
-    with urllib.request.urlopen(req, timeout=120) as r:
-        data = r.read()
-    time.sleep(SLEEP)
-    return data
+    last = None
+    for k in range(tries):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "hyaluronan-expert-llm/0.1"})
+            with urllib.request.urlopen(req, timeout=120) as r:
+                data = r.read()
+            time.sleep(SLEEP)
+            return data
+        except Exception as e:
+            last = e
+            time.sleep(2 * (k + 1))
+    raise last
 
 def esearch_count(db, term):
-    out = json.loads(call("esearch.fcgi", {"db": db, "term": term, "retmode": "json", "retmax": 0}))
+    out = json.loads(call("esearch.fcgi", {"db": db, "term": term, "retmode": "json", "retmax": 0}), strict=False)
     return out["esearchresult"]["count"]
 
-def esearch_ids(db, term, retmax=100000):
-    out = json.loads(call("esearch.fcgi", {"db": db, "term": term, "retmode": "json", "retmax": retmax, "sort": "pub_date"}))
-    return out["esearchresult"]["idlist"]
+def open_history(db, term):
+    out = json.loads(call("esearch.fcgi", {"db": db, "term": term, "retmode": "json",
+                                           "retmax": 0, "sort": "pub_date", "usehistory": "y"}), strict=False)
+    res = out["esearchresult"]
+    return int(res["count"]), res["webenv"], res["querykey"]
 
-def efetch_xml(db, ids):
-    return call("efetch.fcgi", {"db": db, "id": ",".join(ids), "retmode": "xml"})
+def efetch_history(webenv, qk, retstart, retmax=100):
+    return call("efetch.fcgi", {"db": "pmc", "WebEnv": webenv, "query_key": qk,
+                                "retstart": retstart, "retmax": retmax, "retmode": "xml"})
 
 def split_articles(xml_bytes):
     """efetch on PMC returns one <pmc-articleset> with many <article> children."""
@@ -49,22 +59,59 @@ def split_articles(xml_bytes):
     arts = []
     for p in parts:
         if p.startswith("<article"):
-            m = re.search(r'<article-id pub-id-type="pmc">(\d+)</article-id>', p)
+            m = (re.search(r'<article-id pub-id-type="pmcid">(PMC\d+)</article-id>', p)
+                 or re.search(r'<article-id pub-id-type="pmcaid">(\d+)</article-id>', p)
+                 or re.search(r'<article-id pub-id-type="pmc">(\d+)</article-id>', p))
+            pmcid = None
+            if m:
+                v = m.group(1)
+                pmcid = v if v.startswith("PMC") else "PMC" + v
             t = re.search(r"<article-title>(.*?)</article-title>", p, re.S)
             title = re.sub(r"<[^>]+>", "", t.group(1)).strip() if t else ""
-            has_body = "<body>" in p
-            arts.append({"pmcid": "PMC" + m.group(1) if m else None, "title": title, "has_body": has_body, "xml": p})
+            pm = re.search(r'<article-id pub-id-type="pmid">(\d+)</article-id>', p)
+            dm = re.search(r'<article-id pub-id-type="doi">([^<]+)</article-id>', p)
+            ym = re.search(r"<year>(\d{4})</year>", p)
+            arts.append({"pmcid": pmcid, "title": title, "pmid": pm.group(1) if pm else None,
+                         "doi": dm.group(1) if dm else None, "year": ym.group(1) if ym else None,
+                         "has_body": "<body>" in p, "xml": p})
     return arts
 
-def fetch_batch(ids, sink):
-    xml = efetch_xml("pmc", ids)
-    got = 0
-    for a in split_articles(xml):
-        if a["pmcid"] and a["has_body"]:
-            (XMLDIR / f"{a['pmcid']}.xml").write_text(a["xml"], encoding="utf-8")
-            sink.write(json.dumps({"pmcid": a["pmcid"], "title": a["title"], "chars": len(a["xml"])}, ensure_ascii=False) + "\n")
-            sink.flush(); got += 1
-    return got
+def harvest(mode):
+    count, webenv, qk = open_history("pmc", QUERY_TIAB)
+    print("history set:", count, "records")
+    state_f = RAW / "harvest_state.json"
+    state = json.loads(state_f.read_text()) if state_f.exists() else {"next_retstart": 0, "saved": 0}
+    limit = 200 if mode == "sample" else count
+    rs = state["next_retstart"] if mode == "full" else 0
+    have = set()
+    if MANIFEST.exists():
+        have = {json.loads(l)["pmcid"] for l in MANIFEST.read_text().splitlines() if l.strip()}
+    with open(MANIFEST, "a", encoding="utf-8") as sink:
+        while rs < limit:
+            xml = None
+            for attempt in range(6):
+                try:
+                    xml = efetch_history(webenv, qk, rs, 100)
+                    if b"<article" in xml:
+                        break
+                except Exception as e:
+                    print("efetch error:", e)
+                print(f"efetch @{rs}: retry {attempt+1}", flush=True)
+                time.sleep(5 * (attempt + 1))
+            if xml is None or b"<article" not in xml:
+                raise RuntimeError(f"efetch failed at retstart={rs}")
+            for a in split_articles(xml):
+                if a["pmcid"] and a["has_body"] and a["pmcid"] not in have:
+                    (XMLDIR / f"{a['pmcid']}.xml").write_text(a["xml"], encoding="utf-8")
+                    rec = {"pmcid": a["pmcid"], "pmid": a["pmid"], "doi": a["doi"],
+                           "year": a["year"], "title": a["title"], "chars": len(a["xml"])}
+                    sink.write(json.dumps(rec, ensure_ascii=False) + chr(10))
+                    sink.flush(); have.add(a["pmcid"])
+            rs += 100
+            if mode == "full":
+                state_f.write_text(json.dumps({"next_retstart": rs, "saved": len(have)}))
+            print(f"progress retstart {rs}/{limit} | saved total {len(have)}", flush=True)
+    print("DONE. total saved full texts:", len(have))
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "counts"
@@ -73,24 +120,7 @@ def main():
             print(name, "->", esearch_count("pmc", q))
         print("PubMed tiab/mesh ->", esearch_count("pubmed", QUERY_TIAB))
     elif mode in ("sample", "full"):
-        ids = esearch_ids("pmc", QUERY_TIAB)
-        print("PMC tiab/mesh IDs:", len(ids))
-        done = set()
-        if MANIFEST.exists():
-            done = {json.loads(l)["pmcid"] for l in MANIFEST.read_text().splitlines() if l.strip()}
-        todo = [i for i in ids if "PMC" + i not in done]
-        if mode == "sample": todo = todo[:200]
-        print("to fetch:", len(todo), "(already have:", len(done), ")")
-        total = 0
-        with open(MANIFEST, "a", encoding="utf-8") as sink:
-            for i in range(0, len(todo), 100):
-                batch = todo[i:i+100]
-                try:
-                    total += fetch_batch(batch, sink)
-                except Exception as e:
-                    print("batch", i, "failed:", e)
-                print(f"progress {i+len(batch)}/{len(todo)} fetched-with-body total {total}", flush=True)
-        print("DONE. new full texts:", total)
+        harvest(mode)
 
 if __name__ == "__main__":
     main()

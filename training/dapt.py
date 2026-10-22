@@ -159,6 +159,7 @@ def main():
         gradient_checkpointing=a.grad_ckpt,
         gradient_checkpointing_kwargs={"use_reentrant": False} if a.grad_ckpt else None,
         torch_compile=a.compile,
+        use_liger_kernel=importlib.util.find_spec("liger_kernel") is not None,
         optim=a.optim,
         logging_steps=20,
         save_strategy="steps",

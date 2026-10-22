@@ -42,8 +42,27 @@
 | S4 DPO（可选） | 可验证题构造偏好对（对/错答），TRL DPOTrainer 小步数 | training/dpo.py | ~1 h | DPO 模型 |
 | S5 RAG | 全量语料切块向量化建 FAISS；问答端检索注入 + 引用格式；vLLM 服务 | rag/build_index.py, rag/qa.py | ~0.5 h | 带引用问答 demo |
 | S6 评测打包 | 四方对比（底座 / +DAPT+SFT / +RAG / +DPO）；judge 打分 + 选择题精确匹配；抽 50 条错误分析 | eval/run_eval.py | ~1 h | 结果表 + 报告卡 |
+| S7 Idea + Proposal | 语料 gap 分析 → 生成 original research ideas（带新颖性检索）→ top idea 各扩写成完整 research proposal | ideas/ | ~0（API 为主） | Idea Bank + 提案文档集 |
 
 总 GPU 约 8–10 h（H100 租金约 $30–80），加教师 API，总成本 **< $250**。
+
+### S7 细节：原创 idea 与完整研究提案（2026-10-22 用户新增方向）
+
+不是让模型凭空想，而是给它可验证的发现流程：
+
+1. **领域地图与 gap 分析**：由 12,306 篇语料构建 子领域 × 方法 × 应用 覆盖矩阵，定位论文稀疏的交叉格与文献内部互相矛盾的结论（矛盾点优先，天然是可发表的问题）。
+2. **Idea 生成**：模型在 gap 格内生成候选 idea；每条强制结构：假设 / 文献依据（具体引用）/ **新颖性检查**（全语料最近邻检索，须说明与最接近的已有工作差异）/ 可行性（常规实验与材料可达）。
+3. **筛选**：GPT-5 级 judge 按新颖性 × 可行性 × 潜在影响打分，筛至 top 10–20 条；Kunli 本人终审（他是该领域专家，此为项目独有背书）。
+4. **完整 research proposal**：每条入选 idea 扩写为正式提案：Background & Significance（带引用）→ Hypothesis → Specific Aims → Approach/Methods → Expected Results → Pitfalls & Alternatives → Feasibility & Timeline。
+5. **交付**：Idea Bank 页面（挂 HF Space，与问答 demo 并列）+ 提案 Markdown 文档集入仓库；训练后模型与教师模型各生成一轮，对比展示。
+6. 成本：以 API 调用为主，约 $20–40；不额外占用 GPU。
+
+### 执行优化（2026-10-22 并入）
+
+- **并行**：SFT 数据生成（教师 API）与 RAG 索引构建不吃 GPU，与 DAPT 训练并行跑，GPU 不空转，总时长约省 1/3。
+- **基线并机**：S1 挂在 S2 同一台机器开跑前顺手完成；模型权重存 network volume，只下载一次。
+- **评测省钱**：MCQ/定量/陷阱题精确匹配自动判分（不花 judge 钱），仅 open 题过 judge。
+- **防闲置烧钱**：训练 checkpoint 落盘 + 任务完成自动关机；DAPT 可用 spot 实例 + 断点续训。
 
 ## 4. 时间线（与申请季并行，硬止损在内）
 

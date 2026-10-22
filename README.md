@@ -1,10 +1,10 @@
 # Hyaluronan Expert LLM
 
-A domain-expert language model for **hyaluronan (HA) science**, built on Karpathy's
-[nanochat](https://github.com/karpathy/nanochat) training pipeline.
+A domain-expert language model for **hyaluronan (HA) science**, built with the Hugging Face ecosystem
+(Transformers + TRL) on an open-weight base model.
 
 **Approach**
-1. **Domain-adaptive training** — mid-train a nanochat model on a curated hyaluronan
+1. **Domain-adaptive continued pretraining (DAPT)** — continue training Qwen3-8B-Base on a curated hyaluronan
    corpus (PMC Open Access full texts + abstracts, weighted toward HA synthesis &
    chemical modification, CD44 biology, HA nanoparticles & drug delivery).
 2. **SFT** — question answering generated from the corpus, expert spot-checked.
@@ -15,5 +15,5 @@ A domain-expert language model for **hyaluronan (HA) science**, built on Karpath
 
 **Status**: Phase 1 (data collection) in progress.
 
-Layout: `data_pipeline/` harvest & cleaning scripts · `eval/` benchmark ·
-`rag/` retrieval QA · `notes/` project notes · `third_party/nanochat` upstream submodule.
+Layout: `data_pipeline/` harvest & cleaning scripts · `training/` DAPT/SFT/DPO scripts · `eval/` benchmark ·
+`rag/` retrieval QA · `notes/` project notes · `third_party/nanochat` from-scratch baseline (reference only).

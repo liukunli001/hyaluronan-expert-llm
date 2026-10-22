@@ -1,0 +1,3 @@
+[submodule "third_party/nanochat"]
+	path = third_party/nanochat
+	url = https://github.com/karpathy/nanochat

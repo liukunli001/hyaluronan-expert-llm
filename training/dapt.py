@@ -153,7 +153,7 @@ def main():
         gradient_accumulation_steps=a.accum,
         learning_rate=a.lr,
         lr_scheduler_type="cosine",
-        warmup_ratio=0.03,
+        warmup_steps=10,  # transformers v5 dropped warmup_ratio (~3% of ~290 steps)
         weight_decay=0.0,
         bf16=True,
         gradient_checkpointing=a.grad_ckpt,

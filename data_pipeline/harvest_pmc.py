@@ -113,6 +113,51 @@ def harvest(mode):
             print(f"progress retstart {rs}/{limit} | saved total {len(have)}", flush=True)
     print("DONE. total saved full texts:", len(have))
 
+def esearch_ids(db, term, retmax=10000):
+    out = json.loads(call("esearch.fcgi", {"db": db, "term": term, "retmode": "json", "retmax": retmax}), strict=False)
+    res = out["esearchresult"]
+    return int(res["count"]), res.get("idlist", [])
+
+def harvest_ids(y1, y2):
+    """Fetch one publication-year chunk by explicit ID list.
+
+    Needed because efetch over the history server refuses retstart windows
+    reaching record 10,000 (HTTP 400); ID-based fetch has no such wall.
+    Already-saved PMCIDs (from manifest) are skipped before fetching.
+    """
+    term = QUERY_TIAB + f" AND {y1}/01/01:{y2}/12/31[dp]"
+    count, ids = esearch_ids("pmc", term)
+    assert count <= len(ids), f"chunk {y1}-{y2} too big: {count} > {len(ids)}"
+    have = set()
+    if MANIFEST.exists():
+        have = {json.loads(l)["pmcid"] for l in MANIFEST.read_text().splitlines() if l.strip()}
+    missing = [i for i in ids if ("PMC" + i) not in have]
+    print(f"chunk {y1}-{y2}: {count} records, {len(missing)} not yet saved", flush=True)
+    with open(MANIFEST, "a", encoding="utf-8") as sink:
+        for b in range(0, len(missing), 100):
+            batch = missing[b:b + 100]
+            xml = None
+            for attempt in range(6):
+                try:
+                    xml = call("efetch.fcgi", {"db": "pmc", "id": ",".join(batch), "retmode": "xml"})
+                    if b"<article" in xml:
+                        break
+                except Exception as e:
+                    print("efetch error:", e)
+                print(f"efetch chunk {y1}-{y2} @{b}: retry {attempt+1}", flush=True)
+                time.sleep(5 * (attempt + 1))
+            if xml is None or b"<article" not in xml:
+                raise RuntimeError(f"efetch failed chunk {y1}-{y2} batch {b}")
+            for a in split_articles(xml):
+                if a["pmcid"] and a["has_body"] and a["pmcid"] not in have:
+                    (XMLDIR / f"{a['pmcid']}.xml").write_text(a["xml"], encoding="utf-8")
+                    rec = {"pmcid": a["pmcid"], "pmid": a["pmid"], "doi": a["doi"],
+                           "year": a["year"], "title": a["title"], "chars": len(a["xml"])}
+                    sink.write(json.dumps(rec, ensure_ascii=False) + chr(10))
+                    sink.flush(); have.add(a["pmcid"])
+            print(f"chunk {y1}-{y2} progress {min(b + 100, len(missing))}/{len(missing)} | saved total {len(have)}", flush=True)
+    print(f"chunk {y1}-{y2} done | saved total {len(have)}", flush=True)
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "counts"
     if mode == "counts":
@@ -121,6 +166,8 @@ def main():
         print("PubMed tiab/mesh ->", esearch_count("pubmed", QUERY_TIAB))
     elif mode in ("sample", "full"):
         harvest(mode)
+    elif mode == "ids":
+        harvest_ids(int(sys.argv[2]), int(sys.argv[3]))
 
 if __name__ == "__main__":
     main()

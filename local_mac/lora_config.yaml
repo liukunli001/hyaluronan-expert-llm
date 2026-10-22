@@ -1,0 +1,7 @@
+# mlx-lm LoRA config for the Mac route (pass with --config).
+# Rank 64 matches the GPU route's LoRA fallback capacity; scale = alpha/rank
+# convention in mlx-lm is a plain multiplier - 32 is a sane middle value.
+lora_parameters:
+  rank: 64
+  scale: 32.0
+  dropout: 0.05

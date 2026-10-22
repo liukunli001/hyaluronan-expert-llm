@@ -9,3 +9,4 @@ checkpoints/
 runs/
 !data/processed/*.md
 !data/DATA.md
+data/dapt_mlx/

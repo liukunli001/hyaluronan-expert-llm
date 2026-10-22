@@ -1,5 +1,5 @@
 data/raw/
-data/processed/
+data/processed/*
 __pycache__/
 *.pyc
 .env
@@ -7,3 +7,5 @@ checkpoints/
 *.pt
 *.bin
 runs/
+!data/processed/*.md
+!data/DATA.md

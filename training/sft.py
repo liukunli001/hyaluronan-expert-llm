@@ -21,6 +21,10 @@ def main():
     ap.add_argument("--lr", type=float, default=0.0, help="default: 1e-5 full FT, 1e-4 LoRA")
     ap.add_argument("--bsz", type=int, default=4)
     ap.add_argument("--accum", type=int, default=8)
+    ap.add_argument("--neftune", type=float, default=5.0,
+                    help="NEFTune noise alpha (0 disables); cheap SFT quality boost on small data")
+    ap.add_argument("--grad-ckpt", action="store_true",
+                    help="enable gradient checkpointing (smaller cards); off by default on 96GB")
     a = ap.parse_args()
     lr = a.lr or (1e-4 if a.lora else 1e-5)
 
@@ -34,7 +38,9 @@ def main():
         lr_scheduler_type="cosine",
         warmup_ratio=0.03,
         bf16=True,
-        gradient_checkpointing=True,
+        gradient_checkpointing=a.grad_ckpt,
+        gradient_checkpointing_kwargs={"use_reentrant": False} if a.grad_ckpt else None,
+        neftune_noise_alpha=a.neftune if a.neftune > 0 else None,
         optim="adamw_bnb_8bit" if not a.lora else "adamw_torch",
         logging_steps=20,
         save_strategy="epoch",

@@ -27,3 +27,12 @@ the RAG index used in the "closed-book" eval runs. Textbook-level items (batch 1
 ## Kunli's verification pass (est. 2-3 h total)
 For each item: confirm the draft answer, fix it, or delete the item.
 Only then does `status` become `"verified"`.
+
+## Running the bench (`run_eval.py`)
+- MCQ and quantitative items are auto-graded (no judge cost); open and
+  trap items go to an LLM judge against the verified key
+  (`JUDGE_API_KEY` or `TEACHER_API_KEY`).
+- `--split dev` is a stratified 25% for iteration; reported numbers come
+  from the verified file with `--split final` / `all`.
+- S6 ablation cells: base, base+rag, dapt+sft, dapt+sft+rag (see the
+  script header for the four commands).

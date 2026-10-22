@@ -69,16 +69,26 @@ def main():
     ap.add_argument("--n", type=int, default=15000, help="target HA Q&A pairs")
     ap.add_argument("--general", default="", help="optional general messages jsonl to mix in")
     ap.add_argument("--general-n", type=int, default=10000)
+    ap.add_argument("--type-weights", default="",
+                    help="e.g. 'quantitative=2,mechanism=1.5' - oversample question types "
+                         "the base model is weak on (from the S1 baseline breakdown)")
     a = ap.parse_args()
     if not KEY:
         raise SystemExit("TEACHER_API_KEY not set - cannot call the teacher model.")
     random.seed(42)
     kept, seen_q = [], set()
-    kinds = list(TYPES)
+    weights = {}
+    for kv in a.type_weights.split(","):
+        if "=" in kv:
+            k, v = kv.split("=", 1)
+            weights[k.strip()] = float(v)
+    bag = []
+    for k in TYPES:
+        bag += [k] * max(1, round(weights.get(k, 1.0) * 10))
     for i, p in enumerate(passages()):
         if len(kept) >= a.n:
             break
-        kind = kinds[i % len(kinds)]
+        kind = bag[i % len(bag)]
         try:
             qa = teacher(p, kind)
         except Exception as e:

@@ -15,9 +15,11 @@
 ## Downloads
 Bulk data is published as **GitHub Release assets** (git history is not suited to GB-scale files):
 see the repo's Releases page — `corpus_v1.jsonl.gz` (cleaned text corpus), `manifest.jsonl`,
-`pmc_xml.tar.gz` (raw JATS XML as harvested), and `dapt_corpus.jsonl.gz` (the 4,951-paper /
-~60M-token core subset selected for domain-adaptive pretraining by `training/prepare_dapt.py`,
-with the 30 holdout reviews excluded).
+`pmc_xml.tar.gz` (raw JATS XML as harvested), `dapt_corpus.jsonl.gz` (the ~4,950-paper /
+~60M-token core subset selected for domain-adaptive pretraining by `training/prepare_dapt.py`
+after MinHash near-duplicate removal, with the 30 holdout reviews excluded), and
+`dapt_anneal.jsonl.gz` (the 498-paper / ~5.7M-token high-quality subset - reviews and
+top-scored papers - appended at the tail of DAPT as the annealing phase).
 
 ## Licensing note
 Articles come from the PMC Open Access subset; individual articles carry their own

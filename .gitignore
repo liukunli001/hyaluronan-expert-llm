@@ -10,3 +10,4 @@ runs/
 !data/processed/*.md
 !data/DATA.md
 data/dapt_mlx/
+local_mac/resolved_config.json

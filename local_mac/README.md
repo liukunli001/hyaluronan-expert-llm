@@ -28,6 +28,11 @@ this route changes the recipe, it does not just move it.
 
 ## Setup & commands (from the repo root)
 ```bash
+# Step 0 - preflight: detects chip + unified memory itself, picks the
+# tier below, and writes local_mac/resolved_config.json with the exact
+# model id / batch / commands for this machine (read-only, no installs)
+python3 local_mac/preflight_mac.py
+
 pip install mlx-lm
 python3 local_mac/prepare_local_data.py            # -> data/dapt_mlx/, data/sft_mlx/
 

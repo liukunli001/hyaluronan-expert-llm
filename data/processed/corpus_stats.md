@@ -1,38 +1,39 @@
 # Corpus v1 stats
 
-- papers kept: 7108 (files scanned: 7292, skipped: {'non_english': 139, 'stub': 26, 'dup_title': 19})
-- total chars: 279,625,584 | est tokens (chars/3.5): 79,893,024
-- mean chars/paper: 39,340
+- papers kept: 12306 (files scanned: 12945, skipped: {'non_english': 444, 'stub': 169, 'dup_title': 26})
+- total chars: 441,127,875 | est tokens (chars/3.5): 126,036,536
+- mean chars/paper: 35,847
 
 ## by decade
 
-- 2000s: 4
-- 2010s: 66
-- 2020s: 7038
+- 1990s: 7
+- 2000s: 110
+- 2010s: 3842
+- 2020s: 8347
 
 ## subfield hits (title+first 4k chars, multi-label)
 
-- synthesis_modification: 3490
-- hydrogel_scaffold: 2602
-- cancer: 2078
-- nano_delivery: 1630
-- cd44_signaling: 1501
-- mol_weight: 853
+- synthesis_modification: 5970
+- hydrogel_scaffold: 4232
+- cancer: 3849
+- cd44_signaling: 3071
+- nano_delivery: 2506
+- mol_weight: 1740
 
 ## top journals
 
-- International Journal of Molecular Sciences: 317
-- Pharmaceutics: 213
-- Materials Today Bio: 202
-- Cureus: 178
-- Gels: 169
-- Scientific Reports: 163
-- Polymers: 153
-- Journal of Clinical Medicine: 132
-- Advanced Science: 127
-- Bioactive Materials: 124
-- Journal of Nanobiotechnology: 122
-- Molecules: 100
-- Frontiers in Bioengineering and Biotechnology: 97
-- Plastic and Reconstructive Surgery Global Open: 97
-- International Journal of Nanomedicine: 93
+- International Journal of Molecular Sciences: 487
+- Scientific Reports: 353
+- PLoS ONE: 312
+- Pharmaceutics: 302
+- Polymers: 229
+- Materials Today Bio: 204
+- International Journal of Nanomedicine: 198
+- Cureus: 188
+- Gels: 180
+- Journal of Clinical Medicine: 155
+- Molecules: 154
+- Plastic and Reconstructive Surgery Global Open: 151
+- Advanced Science: 143
+- Bioactive Materials: 142
+- Journal of Nanobiotechnology: 141

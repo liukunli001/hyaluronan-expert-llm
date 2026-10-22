@@ -1,0 +1,11 @@
+# GPU box (Linux, CUDA 12.x). Install torch first per https://pytorch.org for your CUDA.
+torch>=2.4
+transformers>=4.51
+trl>=0.15
+peft>=0.15
+accelerate>=1.0
+datasets>=3.0
+bitsandbytes>=0.45
+sentencepiece
+# flash-attn: pip install flash-attn --no-build-isolation (needs nvcc; skip on non-Hopper/Ampere issues and drop attn_implementation)
+# eval/serving (S1/S5/S6): vllm, faiss-cpu, sentence-transformers

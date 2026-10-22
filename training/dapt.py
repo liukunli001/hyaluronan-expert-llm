@@ -81,6 +81,11 @@ def main():
     ap.add_argument("--max-steps", type=int, default=-1)
     a = ap.parse_args()
 
+    import importlib.util
+    if importlib.util.find_spec("flash_attn") is None and not a.packing:
+        print("flash_attn not installed -> fallback: --packing + SDPA attention")
+        a.packing = True
+
     tok = AutoTokenizer.from_pretrained(a.base)
     raw = load_dataset("json", data_files=a.data, split="train")
     domain = chunk_dataset(raw, tok, a.seq_len)
@@ -134,8 +139,10 @@ def main():
     print(f"total chunks: {len(train_ds)} | ~tokens/step {tokens_per_step} "
           f"| save every {save_steps} steps")
 
+    attn = ("flash_attention_2" if importlib.util.find_spec("flash_attn")
+            else "sdpa")
     model = AutoModelForCausalLM.from_pretrained(
-        a.base, dtype=torch.bfloat16, attn_implementation="flash_attention_2")
+        a.base, dtype=torch.bfloat16, attn_implementation=attn)
     model.config.use_cache = False
 
     args = TrainingArguments(

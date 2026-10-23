@@ -250,8 +250,11 @@ combining SFT with retrieval.
 - Code, corpus manifests, benchmark (v3 keys with per-question
   verification status), and full result files:
   https://github.com/liukunli001/hyaluronan-expert-llm
-- Weights: [HF model repos — to be filled on upload]
-- Interactive demo (chat + cited retrieval): [HF Space — to be filled]
+- Weights: https://huggingface.co/liukunli/ha-expert-qwen3-8b (SFT model) and
+  https://huggingface.co/liukunli/ha-expert-qwen3-8b-dapt (DAPT checkpoint)
+- Retrieval index: https://huggingface.co/datasets/liukunli/ha-expert-index
+- Interactive demo (chat + cited retrieval):
+  https://huggingface.co/spaces/liukunli/ha-expert-demo
 - Corpus release: GitHub Release `v0.1-data`.
 
 ## Acknowledgements

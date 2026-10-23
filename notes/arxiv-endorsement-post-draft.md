@@ -5,7 +5,7 @@
 https://discuss.huggingface.co/t/request-for-feedback-and-arxiv-cs-cl-endorsement/178261
 
 发帖前需填：HA-Expert: A Domain-Adapted Language Model and Evidence-Checked Benchmark for Hyaluronan Research 论文标题、[LINK] 与 [CODE] —— 在 arXiv 发起投稿、选定 cs.CL
-后系统生成；[DEMO] 与 [CODE REPO] 在打包完成后填。
+后系统生成；https://huggingface.co/spaces/liukunli/ha-expert-demo 与 [CODE REPO] 在打包完成后填。
 
 ---
 
@@ -22,7 +22,7 @@ I am preparing to submit a paper to the **cs.CL (Computation and Language)** cat
 - A curated corpus of 12,306 full-text papers (~126M tokens) from the hyaluronan literature, publicly released.
 - Full-parameter domain-adaptive pretraining and supervised fine-tuning of an 8B open model, plus retrieval-augmented generation that answers with citations.
 - A 240-question benchmark (HA-Expert-Bench) whose answers were checked against source-paper evidence, with a four-way ablation of pretraining, fine-tuning, and retrieval against the base model.
-- Public release of the model weights, data, and a live demo: [DEMO] · code: https://github.com/liukunli001/hyaluronan-expert-llm
+- Public release of the model weights, data, and a live demo: https://huggingface.co/spaces/liukunli/ha-expert-demo · code: https://github.com/liukunli001/hyaluronan-expert-llm
 
 My Google Scholar profile: https://scholar.google.com/citations?user=G0CAhlwAAAAJ&hl=en&oi=ao
 

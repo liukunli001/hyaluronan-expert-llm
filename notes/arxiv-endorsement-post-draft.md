@@ -4,7 +4,7 @@
 求 cs.CL endorsement —— 与本项目形态几乎一样。
 https://discuss.huggingface.co/t/request-for-feedback-and-arxiv-cs-cl-endorsement/178261
 
-发帖前需填：[TITLE] 论文标题、[LINK] 与 [CODE] —— 在 arXiv 发起投稿、选定 cs.CL
+发帖前需填：HA-Expert: A Domain-Adapted Language Model and Evidence-Checked Benchmark for Hyaluronan Research 论文标题、[LINK] 与 [CODE] —— 在 arXiv 发起投稿、选定 cs.CL
 后系统生成；[DEMO] 与 [CODE REPO] 在打包完成后填。
 
 ---
@@ -17,7 +17,7 @@ Hello,
 
 My name is Kunli Liu. I am a Senior Research Scientist at Meta working on LLM agents, and I hold a Ph.D. in Chemistry from Michigan State University. This post concerns an independent research project I completed outside my day job.
 
-I am preparing to submit a paper to the **cs.CL (Computation and Language)** category on arXiv: *[TITLE]*. The work presents a domain-adapted language model for hyaluronan (hyaluronic acid) research — the field of my doctoral work. It includes:
+I am preparing to submit a paper to the **cs.CL (Computation and Language)** category on arXiv: *HA-Expert: A Domain-Adapted Language Model and Evidence-Checked Benchmark for Hyaluronan Research*. The work presents a domain-adapted language model for hyaluronan (hyaluronic acid) research — the field of my doctoral work. It includes:
 
 - A curated corpus of 12,306 full-text papers (~126M tokens) from the hyaluronan literature, publicly released.
 - Full-parameter domain-adaptive pretraining and supervised fine-tuning of an 8B open model, plus retrieval-augmented generation that answers with citations.
@@ -45,7 +45,7 @@ Subject: Request for arXiv cs.CL endorsement — domain-adapted LLM paper
 Dear Dr. [NAME],
 
 I am a Senior Research Scientist at Meta (Ph.D. in Chemistry, Michigan State University)
-preparing my first arXiv submission to cs.CL: *[TITLE]*, a domain-adapted language model
+preparing my first arXiv submission to cs.CL: *HA-Expert: A Domain-Adapted Language Model and Evidence-Checked Benchmark for Hyaluronan Research*, a domain-adapted language model
 for hyaluronan research with a publicly released corpus, model, benchmark, and demo
 (Google Scholar: https://scholar.google.com/citations?user=G0CAhlwAAAAJ&hl=en&oi=ao).
 

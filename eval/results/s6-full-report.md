@@ -109,3 +109,12 @@ choice, correct?"**
   re-verification with the vector index is the next step); scores against
   those items carry key risk.
 - Greedy decoding throughout; repetition behavior is decode-sensitive.
+
+## Addendum (2026-10-23): bench v3 re-verification — S6 scores unaffected
+
+The 103 `uncertain` v2 keys were re-verified against top-6 vector-retrieved
+evidence packs (S5b): 72 verified, 3 corrected, 28 remain uncertain; bench v3
+has 212/240 keys evidence-settled. Only 3 keys changed (B22, F07, G14).
+Re-scoring check: B22/F07 auto-grades identical under v3 keys in all 4 cells;
+G14 re-judged against the corrected key in all 4 cells — verdicts unchanged
+(wrong/wrong/correct/correct). **All headline scores in this report stand.**

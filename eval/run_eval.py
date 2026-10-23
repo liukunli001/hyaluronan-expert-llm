@@ -80,15 +80,18 @@ def judge(item, resp):
     body = json.dumps({"model": model, "messages": [
         {"role": "user", "content": JUDGE_PROMPT.format(
             q=item["question"], ref=item.get("draft_answer") or item["answer"], cand=resp[:2000])}],
-        "temperature": 0}).encode()
+        "temperature": 0, "max_tokens": 200}).encode()
     req = urllib.request.Request(base + "/chat/completions", data=body,
                                  headers={"Authorization": "Bearer " + key,
                                           "Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=120) as r:
             txt = json.loads(r.read())["choices"][0]["message"]["content"]
-        m = re.search(r"\{.*\}", txt, re.S)
-        return json.loads(m.group(0))["verdict"] if m else "ungraded"
+        i = txt.find("{")
+        if i < 0:
+            return "ungraded"
+        obj, _ = json.JSONDecoder().raw_decode(txt[i:])
+        return obj["verdict"]
     except Exception as e:
         print("judge error:", e, file=sys.stderr)
         return "ungraded"

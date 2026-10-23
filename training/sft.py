@@ -29,6 +29,13 @@ def main():
     lr = a.lr or (1e-4 if a.lora else 1e-5)
 
     ds = load_dataset("json", data_files=a.data, split="train")
+    # TRL 1.16: assistant_only_loss needs {% generation %} markers that the
+    # Qwen3-Base chat template lacks. Equivalent route: prompt/completion
+    # format + completion_only_loss (prompt tokens masked by construction).
+    def to_pc(row):
+        msgs = row["messages"]
+        return {"prompt": msgs[:-1], "completion": [msgs[-1]]}
+    ds = ds.map(to_pc, remove_columns=ds.column_names)
     import math
     total_steps = math.ceil(len(ds) / (a.bsz * a.accum)) * max(1, round(a.epochs))
     cfg = SFTConfig(
@@ -50,7 +57,7 @@ def main():
         report_to=[],
         seed=42,
         max_length=2048,
-        assistant_only_loss=True,
+        completion_only_loss=True,
         model_init_kwargs={"dtype": torch.bfloat16,
                            "attn_implementation": "sdpa"},  # flash-attn pkg absent on pod; sdpa is fine at len 2048
     )

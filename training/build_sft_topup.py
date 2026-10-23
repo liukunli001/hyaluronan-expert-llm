@@ -31,9 +31,11 @@ def main():
     a = ap.parse_args()
     random.seed(123)
     seen_q = set()
-    for l in open(MAIN, encoding="utf-8"):
-        q = json.loads(l)["messages"][1]["content"]
-        seen_q.add(re.sub(r"[^a-z0-9]+", " ", q.lower()).strip()[:80])
+    for src in (MAIN, OUT):
+        if src.exists():
+            for l in open(src, encoding="utf-8"):
+                q = json.loads(l)["messages"][1]["content"]
+                seen_q.add(re.sub(r"[^a-z0-9]+", " ", q.lower()).strip()[:80])
     kinds = list(TYPES)
     tasks = []
     for i, p in enumerate(passages4()):
@@ -43,7 +45,7 @@ def main():
     random.shuffle(tasks)
     print("topup tasks:", len(tasks), "existing questions:", len(seen_q), flush=True)
     kept = 0
-    out_fh = open(OUT, "w", encoding="utf-8")
+    out_fh = open(OUT, "a", encoding="utf-8")
     idx, window = 0, a.workers * 4
     with ThreadPoolExecutor(max_workers=a.workers) as ex:
         while idx < len(tasks) and kept < a.n:

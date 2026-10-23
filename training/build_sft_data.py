@@ -37,7 +37,7 @@ def teacher(passage, kind):
               "Reply with strict JSON: {\"question\": \"...\", \"answer\": \"...\"}. "
               "The answer must be self-contained (no 'the passage says').")
     body = json.dumps({"model": MODEL, "messages": [{"role": "user", "content": prompt}],
-                       "temperature": 0.7}).encode()
+                       "temperature": 0.7, "max_tokens": 700}).encode()
     req = urllib.request.Request(BASE + "/chat/completions", data=body,
                                  headers={"Authorization": "Bearer " + KEY,
                                           "Content-Type": "application/json"})

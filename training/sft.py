@@ -52,8 +52,7 @@ def main():
         neftune_noise_alpha=a.neftune if a.neftune > 0 else None,
         optim="adamw_bnb_8bit" if not a.lora else "adamw_torch",
         logging_steps=20,
-        save_strategy="epoch",
-        save_total_limit=2,
+        save_strategy="no",  # pod disk is tight; script saves final weights explicitly after train()
         report_to=[],
         seed=42,
         max_length=2048,

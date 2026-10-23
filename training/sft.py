@@ -29,6 +29,8 @@ def main():
     lr = a.lr or (1e-4 if a.lora else 1e-5)
 
     ds = load_dataset("json", data_files=a.data, split="train")
+    import math
+    total_steps = math.ceil(len(ds) / (a.bsz * a.accum)) * max(1, round(a.epochs))
     cfg = SFTConfig(
         output_dir=a.out,
         num_train_epochs=a.epochs,
@@ -36,7 +38,7 @@ def main():
         gradient_accumulation_steps=a.accum,
         learning_rate=lr,
         lr_scheduler_type="cosine",
-        warmup_ratio=0.03,
+        warmup_steps=max(3, int(0.03 * total_steps)),  # transformers v5 dropped warmup_ratio
         bf16=True,
         gradient_checkpointing=a.grad_ckpt,
         gradient_checkpointing_kwargs={"use_reentrant": False} if a.grad_ckpt else None,

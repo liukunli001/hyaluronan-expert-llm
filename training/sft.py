@@ -52,7 +52,7 @@ def main():
         max_length=2048,
         assistant_only_loss=True,
         model_init_kwargs={"dtype": torch.bfloat16,
-                           "attn_implementation": "flash_attention_2"},
+                           "attn_implementation": "sdpa"},  # flash-attn pkg absent on pod; sdpa is fine at len 2048
     )
     peft_cfg = None
     if a.lora:

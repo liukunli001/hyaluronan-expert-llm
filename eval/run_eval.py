@@ -43,7 +43,7 @@ def numbers(text):
     return out
 
 def grade_auto(item, resp):
-    exp = item["draft_answer"]
+    exp = item.get("draft_answer") or item["answer"]
     if item["type"] == "mcq":
         m = re.match(r"\s*([A-D])", exp)
         want = m.group(1) if m else None
@@ -79,7 +79,7 @@ def judge(item, resp):
     model = os.environ.get("JUDGE_MODEL", os.environ.get("TEACHER_MODEL", "gpt-5"))
     body = json.dumps({"model": model, "messages": [
         {"role": "user", "content": JUDGE_PROMPT.format(
-            q=item["question"], ref=item["draft_answer"], cand=resp[:2000])}],
+            q=item["question"], ref=item.get("draft_answer") or item["answer"], cand=resp[:2000])}],
         "temperature": 0}).encode()
     req = urllib.request.Request(base + "/chat/completions", data=body,
                                  headers={"Authorization": "Bearer " + key,

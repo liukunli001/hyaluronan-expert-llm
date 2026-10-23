@@ -43,8 +43,16 @@ def teacher(passage, kind):
                                           "Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=120) as r:
         txt = json.loads(r.read())["choices"][0]["message"]["content"]
-    m = re.search(r"\{.*\}", txt, re.S)
-    return json.loads(m.group(0)) if m else None
+    # Parse the FIRST complete JSON object and ignore any trailing text the
+    # teacher appends (the old greedy-regex + json.loads died on 'Extra data').
+    i = txt.find("{")
+    if i < 0:
+        return None
+    try:
+        obj, _ = json.JSONDecoder().raw_decode(txt[i:])
+        return obj
+    except Exception:
+        return None
 
 def grounded(answer, passage):
     words = [w for w in re.findall(r"[a-z0-9][a-z0-9\-]+", answer.lower()) if w not in STOP]

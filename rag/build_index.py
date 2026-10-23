@@ -42,7 +42,7 @@ def main():
     holdout = set()
     hfile = ROOT / "eval/holdout_pmcids.txt"
     if hfile.exists():
-        holdout = {l.strip() for l in hfile if l.strip()}
+        holdout = {l.strip() for l in hfile.read_text(encoding="utf-8").splitlines() if l.strip()}
 
     out = pathlib.Path(a.out)
     out.mkdir(parents=True, exist_ok=True)

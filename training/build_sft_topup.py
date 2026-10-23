@@ -57,22 +57,22 @@ def main():
                     break
                 try:
                     qa = f.result()
+                    if not qa or not qa.get("question") or not qa.get("answer"):
+                        continue
+                    key = re.sub(r"[^a-z0-9]+", " ", str(qa["question"]).lower()).strip()[:80]
+                    if key in seen_q or not grounded(str(qa["answer"]), futs[f]):
+                        continue
+                    seen_q.add(key)
+                    rec = {"messages": [{"role": "system", "content": SYSTEM},
+                                        {"role": "user", "content": str(qa["question"])},
+                                        {"role": "assistant", "content": str(qa["answer"])}]}
+                    out_fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+                    out_fh.flush()
+                    kept += 1
+                    if kept % 500 == 0:
+                        print("kept", kept, flush=True)
                 except Exception as e:
-                    print("teacher error:", e, flush=True); continue
-                if not qa or not qa.get("question") or not qa.get("answer"):
-                    continue
-                key = re.sub(r"[^a-z0-9]+", " ", qa["question"].lower()).strip()[:80]
-                if key in seen_q or not grounded(qa["answer"], futs[f]):
-                    continue
-                seen_q.add(key)
-                rec = {"messages": [{"role": "system", "content": SYSTEM},
-                                    {"role": "user", "content": qa["question"]},
-                                    {"role": "assistant", "content": qa["answer"]}]}
-                out_fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
-                out_fh.flush()
-                kept += 1
-                if kept % 500 == 0:
-                    print("kept", kept, flush=True)
+                    print("item error:", e, flush=True); continue
     out_fh.close()
     print("topup kept:", kept, "->", OUT)
 

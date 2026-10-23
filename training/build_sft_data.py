@@ -50,9 +50,15 @@ def teacher(passage, kind):
         return None
     try:
         obj, _ = json.JSONDecoder().raw_decode(txt[i:])
-        return obj
     except Exception:
         return None
+    # Teachers sometimes return a bare number for quantitative answers -
+    # coerce to str so downstream .lower() never crashes on an int.
+    if isinstance(obj, dict):
+        for k in ("question", "answer"):
+            if obj.get(k) is not None and not isinstance(obj[k], str):
+                obj[k] = str(obj[k])
+    return obj
 
 def grounded(answer, passage):
     words = [w for w in re.findall(r"[a-z0-9][a-z0-9\-]+", answer.lower()) if w not in STOP]

@@ -11,6 +11,7 @@ chat-messages format {"messages": [system, user, assistant]}.
 Optionally mix general instruction data: --general path/to/messages.jsonl --general-n 10000
 """
 import json, os, re, random, argparse, urllib.request, pathlib
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CORPUS = ROOT / "data" / "processed" / "dapt_corpus.jsonl"
@@ -72,6 +73,8 @@ def main():
     ap.add_argument("--type-weights", default="",
                     help="e.g. 'quantitative=2,mechanism=1.5' - oversample question types "
                          "the base model is weak on (from the S1 baseline breakdown)")
+    ap.add_argument("--workers", type=int, default=48,
+                    help="concurrent teacher calls (the teacher server batches them)")
     a = ap.parse_args()
     if not KEY:
         raise SystemExit("TEACHER_API_KEY not set - cannot call the teacher model.")
@@ -85,25 +88,45 @@ def main():
     bag = []
     for k in TYPES:
         bag += [k] * max(1, round(weights.get(k, 1.0) * 10))
-    for i, p in enumerate(passages()):
-        if len(kept) >= a.n:
-            break
-        kind = bag[i % len(bag)]
-        try:
-            qa = teacher(p, kind)
-        except Exception as e:
-            print("teacher error:", e); continue
+    # Materialize tasks in the same order/kind assignment as the sequential version.
+    tasks = [(p, bag[i % len(bag)]) for i, p in enumerate(passages())]
+    print("passage tasks:", len(tasks), flush=True)
+    out_fh = open(OUT, "w", encoding="utf-8")
+
+    def accept(qa, p):
         if not qa or not qa.get("question") or not qa.get("answer"):
-            continue
+            return
         key = re.sub(r"[^a-z0-9]+", " ", qa["question"].lower()).strip()[:80]
         if key in seen_q or not grounded(qa["answer"], p):
-            continue
+            return
         seen_q.add(key)
-        kept.append({"messages": [{"role": "system", "content": SYSTEM},
-                                  {"role": "user", "content": qa["question"]},
-                                  {"role": "assistant", "content": qa["answer"]}]})
+        rec = {"messages": [{"role": "system", "content": SYSTEM},
+                            {"role": "user", "content": qa["question"]},
+                            {"role": "assistant", "content": qa["answer"]}]}
+        kept.append(rec)
+        out_fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        out_fh.flush()
         if len(kept) % 500 == 0:
             print("kept", len(kept), flush=True)
+
+    # Bounded in-flight window: submit in chunks, harvest as calls complete,
+    # stop as soon as the target is reached (surplus results are discarded).
+    idx = 0
+    window = a.workers * 4
+    with ThreadPoolExecutor(max_workers=a.workers) as ex:
+        while idx < len(tasks) and len(kept) < a.n:
+            chunk = tasks[idx:idx + window]
+            idx += len(chunk)
+            futs = {ex.submit(teacher, p, k): p for p, k in chunk}
+            for f in as_completed(futs):
+                if len(kept) >= a.n:
+                    break
+                try:
+                    accept(f.result(), futs[f])
+                except Exception as e:
+                    print("teacher error:", e, flush=True)
+    out_fh.close()
+    print("kept total:", len(kept), flush=True)
     if a.general:
         gen = [json.loads(l) for l in open(a.general, encoding="utf-8")][:a.general_n]
         kept += gen

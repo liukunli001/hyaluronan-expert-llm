@@ -4,11 +4,19 @@
 All numbers are taken from eval/results/s6-full-report.md (S6 run,
 bench v3 keys). Palette: Okabe--Ito colorblind-safe, with one consistent
 color per configuration across Figures 2 and 3.
+
+Typography: figures are designed AT their final print width
+(Fig. 1/2: \\textwidth = 6.5in; Fig. 3: 0.85\\textwidth = 5.5in), so
+the point sizes below are the printed point sizes (minimum 9pt).
+Figure 1 wraps its Training and Retrieval lanes over two rows each so
+that every label fits its box at >= 9pt. Exports: vector PDF + PNG at
+300 dpi.
 """
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
+from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, PathPatch
+from matplotlib.path import Path
 import numpy as np
 import os
 
@@ -41,152 +49,188 @@ plt.rcParams.update({
     "ytick.color": EDGE,
     "text.color": EDGE,
     "axes.labelcolor": EDGE,
-    "xtick.labelsize": 12,
-    "ytick.labelsize": 12,
 })
 
 
-def save(fig, name):
-    fig.savefig(os.path.join(OUT, name + ".pdf"), bbox_inches="tight")
-    fig.savefig(os.path.join(OUT, name + ".png"), dpi=300, bbox_inches="tight")
+def save(fig, name, tight=True):
+    kw = {"bbox_inches": "tight", "pad_inches": 0.02} if tight else {}
+    fig.savefig(os.path.join(OUT, name + ".pdf"), **kw)
+    fig.savefig(os.path.join(OUT, name + ".png"), dpi=300, **kw)
     plt.close(fig)
     print("wrote", name)
 
 
 # ---------------------------------------------------------------- Figure 1
 def fig1():
-    # Designed 10in wide, printed at \textwidth (~6.5in): scale 0.65,
-    # so 12pt design text -> ~8pt in print.
-    fig, ax = plt.subplots(figsize=(10.0, 5.8))
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 58)
+    # Canvas: 130 x-units = 6.5in wide (20 units/in), 92 units = 4.6in.
+    # Box widths were set from measured DejaVu text widths at the sizes
+    # used below (titles 10pt bold, subs 9pt) plus 3.2 units of padding,
+    # so no label overflows its box.
+    fig, ax = plt.subplots(figsize=(6.5, 4.6))
+    fig.subplots_adjust(left=0.005, right=0.995, top=0.995, bottom=0.005)
+    ax.set_xlim(0, 130)
+    ax.set_ylim(0, 92)
     ax.axis("off")
 
-    lanes = [  # (y_bottom, height, label, facecolor)
-        (40.5, 16.0, "Training", "#FDF3E0"),
-        (21.0, 16.0, "Retrieval", "#E8F1F8"),
-        (1.5, 16.0, "Evaluation", "#EAF5F0"),
+    lanes = [  # (y_bottom, y_top, label, facecolor)
+        (61.0, 92.0, "Training", "#FDF3E0"),
+        (25.0, 57.6, "Retrieval", "#E8F1F8"),
+        (1.0, 21.6, "Evaluation", "#EAF5F0"),
     ]
-    for yb, h, label, fc in lanes:
-        ax.add_patch(FancyBboxPatch((0.3, yb), 99.4, h,
+    for yb, yt, label, fc in lanes:
+        ax.add_patch(FancyBboxPatch((0.5, yb), 129.0, yt - yb,
                                     boxstyle="round,pad=0,rounding_size=1.2",
                                     fc=fc, ec="#BBBBBB", lw=0.8, zorder=0))
-        ax.text(1.8, yb + h - 2.3, label, fontsize=13, fontweight="bold",
-                va="center", ha="left", color="#555555")
+        ax.text(3.5, yt - 2.6, label, fontsize=10.5, fontweight="bold",
+                va="center", ha="left", color="#555555", zorder=5)
 
-    def box(x, cy, w, title, sub="", fc="white", bold=False, tc=EDGE,
-            h=10.0, sfs=10.5):
-        y = cy - h / 2
-        ax.add_patch(FancyBboxPatch((x, y), w, h,
+    def box(x, cy, w, lines, fc="white", tc=EDGE):
+        """lines: list of (text, kind); kind 't' = title (10pt bold),
+        's' = sub (9pt). Box height grows with the number of lines."""
+        nl = len(lines)
+        h = 3.0 * nl + 1.8
+        ax.add_patch(FancyBboxPatch((x, cy - h / 2), w, h,
                                     boxstyle="round,pad=0,rounding_size=1.0",
-                                    fc=fc, ec=EDGE, lw=1.1, zorder=3))
+                                    fc=fc, ec=EDGE, lw=1.0, zorder=3))
         cx = x + w / 2
-        if sub and "\n" in sub:
-            ax.text(cx, cy + 2.9, title, fontsize=12,
-                    fontweight="bold" if bold else "normal",
-                    va="center", ha="center", zorder=4, color=tc)
-            ax.text(cx, cy - 2.1, sub, fontsize=sfs, linespacing=1.5,
-                    va="center", ha="center", zorder=4, color=tc)
-        elif sub:
-            ax.text(cx, cy + 1.9, title, fontsize=12,
-                    fontweight="bold" if bold else "normal",
-                    va="center", ha="center", zorder=4, color=tc)
-            ax.text(cx, cy - 2.4, sub, fontsize=sfs,
-                    va="center", ha="center", zorder=4, color=tc)
-        else:
-            ax.text(cx, cy, title, fontsize=12,
-                    fontweight="bold" if bold else "normal",
-                    va="center", ha="center", zorder=4, color=tc)
+        for i, (txt, kind) in enumerate(lines):
+            ly = cy + (nl - 1) * 1.55 - i * 3.1
+            if kind == "t":
+                ax.text(cx, ly, txt, fontsize=10, fontweight="bold",
+                        va="center", ha="center", zorder=4, color=tc)
+            else:
+                ax.text(cx, ly, txt, fontsize=9,
+                        va="center", ha="center", zorder=4, color=tc)
+        return {"x": x, "w": w, "cx": cx, "cy": cy, "h": h,
+                "top": cy + h / 2, "bot": cy - h / 2,
+                "left": x, "right": x + w}
 
     def arrow(x1, y1, x2, y2, color=EDGE):
         ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2),
-                                     arrowstyle="-|>", mutation_scale=16,
-                                     lw=1.4, color=color, zorder=2,
+                                     arrowstyle="-|>", mutation_scale=12,
+                                     lw=1.3, color=color, zorder=2,
                                      shrinkA=0, shrinkB=0))
 
-    # --- Training lane (box centre y = 45.7)
-    cy = 45.7
-    box(2.0, cy, 16.0, "Corpus", "12,306 papers\n~126M tokens")
-    box(20.5, cy, 13.0, "Tokenize", "seq. len 4,096", sfs=9.5)
-    box(36.0, cy, 17.0, "DAPT", "Qwen3-8B-Base\n212 steps")
-    box(55.5, cy, 16.5, "SFT data", "self-generated\n12,003 QA pairs")
-    box(74.5, cy, 10.0, "SFT", "752 steps")
-    box(86.5, cy, 12.5, "HA-Expert", "model", fc="#0072B2", bold=True, tc="white")
-    for x1, x2 in [(18.0, 20.5), (33.5, 36.0), (53.0, 55.5),
-                   (72.0, 74.5), (84.5, 86.5)]:
-        arrow(x1, cy, x2, cy)
+    def elbow(points, color):
+        verts = np.array(points, dtype=float)
+        codes = [Path.MOVETO] + [Path.LINETO] * (len(points) - 1)
+        ax.add_patch(PathPatch(Path(verts, codes), fill=False,
+                               lw=1.3, color=color, zorder=2))
+        (x1, y1), (x2, y2) = points[-2], points[-1]
+        arrow(x1, y1, x2, y2, color=color)
 
-    # --- Retrieval lane (box centre y = 26.2)
-    ry = 26.2
-    box(2.0, ry, 16.0, "Text chunks", "~900 chars")
-    box(20.5, ry, 22.0, "Embedding", "Qwen3-Embedding-0.6B\n1,024-dim vectors",
-        sfs=9.5)
-    box(45.0, ry, 18.0, "FAISS index", "636,959 passages")
-    box(65.5, ry, 17.0, "Top-4 retrieval", "at inference")
-    for x1, x2 in [(18.0, 20.5), (42.5, 45.0), (63.0, 65.5)]:
-        arrow(x1, ry, x2, ry)
-    # corpus feeds the retrieval lane
-    arrow(10.0, cy - 5.0, 10.0, ry + 5.0, color="#0072B2")
-    ax.text(11.4, 38.8, "same corpus", fontsize=10.5, color="#0072B2",
-            va="center")
-    # retrieval feeds the model (RAG on/off)
-    arrow(82.5, ry + 1.5, 90.0, cy - 5.0, color="#0072B2")
-    ax.text(89.8, 35.8, "RAG on/off", fontsize=10.5, color="#0072B2",
-            ha="center", va="center", rotation=52)
+    T, S = "t", "s"
+    # --- Training lane: row 1 (cy=81), row 2 (cy=66.8)
+    corpus = box(2.0, 81.0, 28.4, [("Corpus", T), ("12,306 papers", S),
+                                   ("~126M tokens", S)])
+    tok = box(36.4, 81.0, 28.0, [("Tokenize", T), ("seq. len 4,096", S)])
+    dapt = box(70.4, 81.0, 30.8, [("DAPT", T), ("Qwen3-8B-Base", S),
+                                  ("212 steps", S)])
+    sftdata = box(20.0, 66.8, 31.3, [("SFT data", T), ("self-generated", S),
+                                     ("12,003 QA pairs", S)])
+    sft = box(53.7, 66.8, 20.3, [("SFT", T), ("752 steps", S)])
+    model = box(76.4, 66.8, 25.3, [("HA-Expert", T), ("model", S)],
+                fc="#0072B2", tc="white")
+    arrow(corpus["right"], 81.0, tok["left"], 81.0)
+    arrow(tok["right"], 81.0, dapt["left"], 81.0)
+    # wrap: DAPT -> SFT data (down, left along the inter-row gap, down)
+    elbow([(dapt["cx"], dapt["bot"]), (dapt["cx"], 73.6),
+           (sftdata["cx"], 73.6), (sftdata["cx"], sftdata["top"])], EDGE)
+    arrow(sftdata["right"], 66.8, sft["left"], 66.8)
+    arrow(sft["right"], 66.8, model["left"], 66.8)
 
-    # --- Evaluation lane (box centre y = 6.7)
-    ey = 6.7
-    box(2.0, ey, 23.0, "HA-Expert-Bench", "240 evidence-checked\nquestions")
-    box(28.0, ey, 31.0, "4 configurations",
-        "Base / DAPT+SFT\nBase+RAG / DAPT+SFT+RAG")
-    box(66.0, ey, 21.0, "Scores", "0.300 · 0.601\n0.710 · 0.662")
-    arrow(25.0, ey, 28.0, ey)
-    arrow(59.0, ey, 66.0, ey)
-    # model is evaluated in the four cells
-    arrow(94.5, cy - 5.0, 76.5, ey + 5.0, color="#009E73")
-    ax.text(80.2, 18.6, "evaluate", fontsize=10.5, color="#009E73",
-            ha="center", va="center", rotation=-63)
+    # --- Retrieval lane: row 1 (cy=47), row 2 (cy=32)
+    chunks = box(2.0, 47.0, 29.0, [("Text chunks", T), ("~900 chars", S)])
+    embed = box(33.4, 47.0, 45.5, [("Embedding", T),
+                                   ("Qwen3-Embedding-0.6B", S),
+                                   ("1,024-dim vectors", S)])
+    faiss = box(44.0, 32.0, 35.0, [("FAISS index", T),
+                                   ("636,959 passages", S)])
+    top4 = box(82.4, 32.0, 25.0, [("Top-4", T), ("retrieval", T),
+                                  ("at inference", S)])
+    arrow(chunks["right"], 47.0, embed["left"], 47.0)
+    # Embedding -> FAISS index (down, right along the inter-row gap, down)
+    elbow([(embed["cx"], embed["bot"]), (embed["cx"], 38.7),
+           (faiss["cx"], 38.7), (faiss["cx"], faiss["top"])], EDGE)
+    arrow(faiss["right"], 32.0, top4["left"], 32.0)
+    # corpus feeds the retrieval lane (long vertical at the left)
+    arrow(16.35, corpus["bot"], 16.35, chunks["top"], color="#0072B2")
+    ax.text(18.6, 59.3, "same corpus", fontsize=9, color="#0072B2",
+            va="center", ha="left")
+    # retrieval feeds the model (RAG on/off): diagonal, horizontal label
+    arrow(top4["cx"], top4["top"], model["cx"], model["bot"],
+          color="#0072B2")
+    ax.text(96.5, 47.5, "RAG on/off", fontsize=9, color="#0072B2",
+            va="center", ha="left")
 
-    save(fig, "fig1-pipeline")
+    # --- Evaluation lane (cy=9.5)
+    bench = box(2.0, 9.5, 42.5, [("HA-Expert-Bench", T),
+                                 ("240 evidence-checked", S),
+                                 ("questions", S)])
+    configs = box(47.0, 9.5, 38.8, [("4 configurations", T),
+                                    ("Base / DAPT+SFT /", S),
+                                    ("Base+RAG /", S),
+                                    ("DAPT+SFT+RAG", S)])
+    scores = box(88.3, 9.5, 26.5, [("Scores", T), ("0.300 · 0.601", S),
+                                   ("0.710 · 0.662", S)])
+    arrow(bench["right"], 9.5, configs["left"], 9.5)
+    arrow(configs["right"], 9.5, scores["left"], 9.5)
+    # model is evaluated: elbow down the right strip to the Scores box
+    elbow([(80.5, model["bot"]), (80.5, 23.2), (scores["cx"], 23.2),
+           (scores["cx"], scores["top"])], color="#009E73")
+    ax.text(91.0, 20.0, "evaluate", fontsize=9, color="#009E73",
+            va="center", ha="center")
+
+    save(fig, "fig1-pipeline", tight=False)
 
 
 # ---------------------------------------------------------------- Figure 2
 def fig2():
-    fig, axes = plt.subplots(1, 2, figsize=(10.0, 4.3),
-                             gridspec_kw={"width_ratios": [1, 1.9], "wspace": 0.22})
+    # Designed at final print width 6.5in; fonts are true print sizes.
+    fig, axes = plt.subplots(1, 2, figsize=(6.5, 3.4),
+                             gridspec_kw={"width_ratios": [1, 1.85],
+                                          "wspace": 0.26})
     # (a) overall
     ax = axes[0]
     bars = ax.bar(range(4), OVERALL,
                   color=[COLORS[c] for c in CONFIGS],
-                  edgecolor=EDGE, linewidth=0.8, width=0.68)
+                  edgecolor=EDGE, linewidth=0.8, width=0.66, zorder=3)
     for b, v in zip(bars, OVERALL):
-        ax.text(b.get_x() + b.get_width() / 2, v + 0.02, f"{v:.3f}",
-                ha="center", va="bottom", fontsize=12)
+        ax.text(b.get_x() + b.get_width() / 2, v + 0.025, f"{v:.3f}",
+                ha="center", va="bottom", fontsize=9.5)
     ax.set_xticks(range(4))
-    ax.set_xticklabels(["Base", "DAPT+SFT", "Base+RAG", "DAPT+SFT\n+RAG"],
-                       fontsize=10.5)
-    ax.set_ylim(0, 0.82)
-    ax.set_ylabel("Accuracy", fontsize=13)
-    ax.set_title("(a) Overall accuracy", fontsize=13.5, loc="left")
+    ax.set_xticklabels(["Base", "DAPT+SFT", "Base+RAG", "DAPT+SFT+RAG"],
+                       fontsize=9, rotation=30, ha="right")
+    ax.set_ylim(0, 0.84)
+    ax.set_ylabel("Accuracy", fontsize=10.5)
+    ax.set_title("(a) Overall accuracy", fontsize=11.5, loc="left",
+                 fontweight="bold", pad=64)
+    ax.tick_params(axis="y", labelsize=9.5)
     ax.spines[["top", "right"]].set_visible(False)
     ax.grid(axis="y", color="#DDDDDD", lw=0.7, zorder=0)
     ax.set_axisbelow(True)
 
-    # (b) by question type
+    # (b) by question type, with value labels on every bar
     ax = axes[1]
     x = np.arange(len(TYPES))
     w = 0.19
     for i, cfg in enumerate(CONFIGS):
-        ax.bar(x + (i - 1.5) * w, BY_TYPE[cfg], width=w, label=cfg,
-               color=COLORS[cfg], edgecolor=EDGE, linewidth=0.7)
+        bars = ax.bar(x + (i - 1.5) * w, BY_TYPE[cfg], width=w, label=cfg,
+                      color=COLORS[cfg], edgecolor=EDGE, linewidth=0.7,
+                      zorder=3)
+        for b, v in zip(bars, BY_TYPE[cfg]):
+            ax.text(b.get_x() + b.get_width() / 2, v + 0.02, f"{v:.2f}",
+                    ha="center", va="bottom", fontsize=8.5, rotation=90)
     ax.set_xticks(x)
-    ax.set_xticklabels(TYPES, fontsize=11.5)
-    ax.set_ylim(0, 1.0)
-    ax.set_ylabel("Accuracy", fontsize=13)
-    ax.set_title("(b) Accuracy by question type", fontsize=13.5, loc="left",
-                 pad=64)
-    ax.legend(fontsize=11, frameon=False, ncol=2, loc="lower left",
-              bbox_to_anchor=(0.0, 1.01))
+    ax.set_xticklabels(TYPES, fontsize=9.5)
+    ax.set_ylim(0, 1.13)
+    ax.set_ylabel("Accuracy", fontsize=10.5)
+    ax.set_title("(b) Accuracy by question type", fontsize=11.5, loc="left",
+                 fontweight="bold", pad=52)
+    ax.legend(fontsize=9, frameon=False, ncol=2, loc="lower left",
+              bbox_to_anchor=(-0.02, 1.01), handlelength=1.2,
+              handleheight=0.9, columnspacing=1.2)
+    ax.tick_params(axis="y", labelsize=9.5)
     ax.spines[["top", "right"]].set_visible(False)
     ax.grid(axis="y", color="#DDDDDD", lw=0.7, zorder=0)
     ax.set_axisbelow(True)
@@ -196,21 +240,23 @@ def fig2():
 
 # ---------------------------------------------------------------- Figure 3
 def fig3():
-    fig, ax = plt.subplots(figsize=(6.6, 4.0))
+    # Designed at final print width 0.85 * 6.5in = 5.5in.
+    fig, ax = plt.subplots(figsize=(5.5, 3.3))
     bars = ax.bar(CONFIGS, REPETITION,
                   color=[COLORS[c] for c in CONFIGS],
-                  edgecolor=EDGE, linewidth=0.8, width=0.58)
+                  edgecolor=EDGE, linewidth=0.8, width=0.56, zorder=3)
     for b, v in zip(bars, REPETITION):
-        ax.text(b.get_x() + b.get_width() / 2, v + 0.8, str(v),
-                ha="center", va="bottom", fontsize=12)
+        ax.text(b.get_x() + b.get_width() / 2, v + 0.9, str(v),
+                ha="center", va="bottom", fontsize=11, fontweight="bold")
     ax.annotate("+ 5 citation-marker loops",
-                xy=(3, 22), xytext=(1.55, 30.5),
-                fontsize=11.5, color="#009E73",
+                xy=(3, 22), xytext=(1.45, 31.0),
+                fontsize=9.5, color="#009E73",
                 arrowprops=dict(arrowstyle="->", color="#009E73", lw=1.2))
     ax.set_ylim(0, 40)
     ax.set_ylabel("Responses with heavy repetition\n(per 240 responses)",
-                  fontsize=12)
-    ax.tick_params(axis="x", labelsize=10.5)
+                  fontsize=10.5)
+    ax.tick_params(axis="x", labelsize=9.5)
+    ax.tick_params(axis="y", labelsize=9.5)
     for lbl in ax.get_xticklabels():
         lbl.set_text(lbl.get_text().replace("DAPT+SFT+RAG", "DAPT+SFT\n+RAG"))
     ax.spines[["top", "right"]].set_visible(False)

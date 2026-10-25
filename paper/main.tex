@@ -36,38 +36,32 @@ Independent Researcher, San Francisco Bay Area, USA\\
 General-purpose large language models answer questions about
 specialized scientific literatures fluently but unreliably: they err
 on quantitative details and remain confident even when a question rests
-on a false premise. This paper asks what a single researcher, working
-without datacenter resources, can do about one such literature ---
-hyaluronan (hyaluronic acid, HA). We build HA-Expert from
-Qwen3-8B-Base by domain-adaptive continued pretraining (DAPT) on 60M
-tokens drawn from a corpus of 12,306 HA papers ($\approx$126M tokens),
-followed by full-parameter supervised fine-tuning (SFT) on 12,003
-question--answer pairs that the DAPT model generated itself and that a
-grounding filter retained. At inference, the model can be grounded by
-retrieval over a 636,959-passage FAISS index. To measure
-trustworthiness rather than fluency, we construct HA-Expert-Bench: 240
-questions whose reference answers were confirmed or corrected by
-evidence-restricted LLM verifiers (212 of 240 settled), including 15
-adversarial trap questions built on false premises. In a four-cell
-ablation, fine-tuning doubles the base model's score (0.300
-$\rightarrow$ 0.601) and retrieval is the largest single lever
-(base+RAG 0.710; trap accuracy 0.267 $\rightarrow$ 0.867), yet the two
-do \textbf{not} compose additively (combined 0.662). We trace the
-shortfall to two mechanisms: a train/test format mismatch, in which a
-model never trained on retrieved context collapses into
-citation-marker loops (5 of 240 responses), and repetition inherited
-through self-distillation from the teacher --- here, the model itself.
-Because the pipeline is domain-agnostic apart from the corpus query,
-the same recipe applies to other literature-bound fields, such as
-heparin and other glycosaminoglycans or bioconjugation chemistry.
-Beyond question answering, the released model already proposes novel
-research ideas and expands them into structured plans with hypotheses
-and experimental methods; adding corpus-scale novelty checking against
-the literature would turn this capability into a practical research
-tool. A model with a verified command of a field's literature could
-likewise serve as a first-pass reviewer of new submissions --- a use
-that, like ideation, requires evidence-checked evaluation before it
-can be trusted.
+on a false premise. We ask what a single researcher, without
+datacenter resources, can do about one such literature ---
+hyaluronan (hyaluronic acid, HA). From a corpus of 12,306 HA papers
+($\approx$126M tokens), we build HA-Expert by domain-adaptive
+continued pretraining of Qwen3-8B-Base (DAPT; 60M tokens) and
+full-parameter supervised fine-tuning (SFT) on 12,003
+question--answer pairs the DAPT model generated itself, retained by a
+grounding filter; at inference, retrieval over a 636,959-passage FAISS
+index can ground its answers. To measure trustworthiness rather than
+fluency, we construct HA-Expert-Bench --- 240 questions whose
+reference answers evidence-restricted LLM verifiers confirmed or
+corrected (212 of 240 settled), including 15 adversarial trap
+questions built on false premises. In a four-cell ablation,
+fine-tuning doubles the base score (0.300 $\rightarrow$ 0.601) and
+retrieval is the largest single lever (base+RAG 0.710; traps 0.267
+$\rightarrow$ 0.867), yet the two do \textbf{not} compose additively
+(0.662). The shortfall traces to two mechanisms: a train/test format
+mismatch that collapses a model never trained on retrieved context
+into citation-marker loops (5 of 240 responses), and repetition
+inherited through self-distillation. The pipeline is domain-agnostic
+apart from the corpus query, so the recipe transfers to other
+literature-bound fields (heparin and other glycosaminoglycans;
+bioconjugation chemistry). The released model already drafts novel
+research ideas into structured plans; extended with corpus-scale
+novelty checking and evidence-checked evaluation, the same approach
+points toward ideation support and first-pass reviewing.
 \end{abstract}
 
 \section{Introduction}
@@ -521,32 +515,36 @@ assents and repeats itself; both retrieval cells correct the premise.}
 
 \begin{table}[t]
 \centering
-\begin{tabular}{lcccc}
+\small
+\begin{tabular}{lp{0.44\textwidth}cccc}
 \toprule
-Trap & Base & SFT & Base+RAG & SFT+RAG \\
+Trap & Question & Base & SFT & Base+RAG & SFT+RAG \\
 \midrule
-G01 & wrong   & wrong   & correct & correct \\
-G02 & wrong   & wrong   & correct & wrong \\
-G03 & wrong   & wrong   & correct & partial \\
-G04 & partial & correct & correct & correct \\
-G05 & partial & correct & correct & correct \\
-G06 & partial & correct & correct & wrong \\
-G07 & partial & correct & partial & partial \\
-G08 & partial & correct & correct & correct \\
-G09 & wrong   & correct & partial & wrong \\
-G10 & wrong   & ungraded & partial & partial \\
-G11 & wrong   & wrong   & correct & correct \\
-G12 & correct & ungraded & correct & wrong \\
-G13 & wrong   & wrong   & correct & correct \\
-G14 & wrong   & wrong   & correct & correct \\
-G15 & partial & partial & partial & correct \\
+G01 & Since hyaluronan is a protein polymer, which amino acids dominate its composition? & wrong   & wrong   & correct & correct \\
+G02 & Like other GAGs, HA is sulfated in the Golgi before secretion --- which sulfotransferases act on it? & wrong   & wrong   & correct & wrong \\
+G03 & Low-molecular-weight HA is widely used as an anti-inflammatory because it mimics native HMW-HA signaling, correct? & wrong   & wrong   & correct & partial \\
+G04 & CD44 is the only known receptor for hyaluronan, true or false? & partial & correct & correct & correct \\
+G05 & Crosslinked HA dermal fillers are permanent implants that the body cannot break down, right? & partial & correct & correct & correct \\
+G06 & HA and heparin are interchangeable anticoagulants because both are sulfated GAGs, correct? & partial & correct & correct & wrong \\
+G07 & HA fillers restore youthful skin by permanently replacing the collagen you lost, correct? & partial & correct & partial & partial \\
+G08 & Bacterial-fermentation HA must be more immunogenic than animal HA because it is foreign, right? & partial & correct & correct & correct \\
+G09 & For joint injections, the highest-MW HA is always the best choice, correct? & wrong   & correct & partial & wrong \\
+G10 & HA is classified as an antioxidant drug because it scavenges free radicals, true? & wrong   & ungraded & partial & partial \\
+G11 & Oral HA supplements work because the ingested HA travels intact and is deposited directly into your joints, right? & wrong   & wrong   & correct & correct \\
+G12 & Since CD44 drives cancer, blocking CD44 with an approved drug is standard oncology practice, correct? & correct & ungraded & correct & wrong \\
+G13 & HA solutions are simple Newtonian fluids, so their viscosity is a single constant, correct? & wrong   & wrong   & correct & correct \\
+G14 & All commercial HA today is extracted from rooster combs, true? & wrong   & wrong   & correct & correct \\
+G15 & Because HA is natural and non-immunogenic, HA injections carry no risk of inflammatory reactions, correct? & partial & partial & partial & correct \\
 \bottomrule
 \end{tabular}
-\caption{Per-question verdicts on the 15 trap items. Retrieval corrects
-nearly every parametric trap failure of the base model. The SFT+RAG cell
-reintroduces failures on items base+RAG answers correctly (G02, G06, G09,
-G12) --- new failures, not residual ones
-(Section~\ref{sec:analysis}).}
+\caption{Per-question verdicts on the 15 trap items, questions shown
+verbatim. Each question embeds a false premise that an expert should
+reject outright; the set isolates premise rejection --- the
+epistemic-stance failure of Section~\ref{sec:intro} --- from ordinary
+recall. Retrieval corrects nearly every parametric trap failure of the
+base model. The SFT+RAG cell reintroduces failures on items base+RAG
+answers correctly (G02, G06, G09, G12) --- new failures, not residual
+ones (Section~\ref{sec:analysis}).}
 \label{tab:traps}
 \end{table}
 

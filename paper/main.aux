@@ -16,23 +16,23 @@
 \@writefile{toc}{\contentsline {section}{\numberline {3}Corpus}{2}{section.3}\protected@file@percent }
 \newlabel{sec:corpus}{{3}{2}{Corpus}{section.3}{}}
 \citation{qwen3}
+\citation{vllm}
 \@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces The HA corpus at a glance, from PubMed Central metadata. The literature is recent and dispersed: two-thirds of papers date from 2020 or later, spread across 1,819 journals.}}{3}{table.1}\protected@file@percent }
 \newlabel{tab:corpus}{{1}{3}{The HA corpus at a glance, from PubMed Central metadata. The literature is recent and dispersed: two-thirds of papers date from 2020 or later, spread across 1,819 journals}{table.1}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {4}Methods}{3}{section.4}\protected@file@percent }
 \newlabel{sec:methods}{{4}{3}{Methods}{section.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Domain-adaptive pretraining (DAPT)}{3}{subsection.4.1}\protected@file@percent }
 \newlabel{sec:dapt}{{4.1}{3}{Domain-adaptive pretraining (DAPT)}{subsection.4.1}{}}
-\citation{vllm}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Self-generated SFT data}{3}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:sft-data}{{4.2}{3}{Self-generated SFT data}{subsection.4.2}{}}
 \citation{neftune}
+\citation{faiss}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces The HA-Expert pipeline. \textbf  {Training:} the 12,306-paper corpus is tokenized for DAPT of Qwen3-8B-Base, which then generates its own grounding-filtered SFT data. \textbf  {Retrieval:} the corpus is chunked into a FAISS index of 636,959 passages; the top-4 are prepended at inference (RAG on; off: parameters alone). \textbf  {Evaluation:} all four configurations are scored on HA-Expert-Bench's 240 evidence-checked questions.}}{4}{figure.1}\protected@file@percent }
 \newlabel{fig:pipeline}{{1}{4}{The HA-Expert pipeline. \textbf {Training:} the 12,306-paper corpus is tokenized for DAPT of Qwen3-8B-Base, which then generates its own grounding-filtered SFT data. \textbf {Retrieval:} the corpus is chunked into a FAISS index of 636,959 passages; the top-4 are prepended at inference (RAG on; off: parameters alone). \textbf {Evaluation:} all four configurations are scored on HA-Expert-Bench's 240 evidence-checked questions}{figure.1}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Self-generated SFT data}{4}{subsection.4.2}\protected@file@percent }
-\newlabel{sec:sft-data}{{4.2}{4}{Self-generated SFT data}{subsection.4.2}{}}
-\citation{faiss}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Supervised fine-tuning}{4}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:sft-train}{{4.3}{4}{Supervised fine-tuning}{subsection.4.3}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces HA-Expert-Bench composition. Judge-graded items use the correct / partial / wrong rubric of Section~\ref {sec:grading}, scored 1.0 / 0.5 / 0.0 against the evidence-checked reference key.}}{5}{table.2}\protected@file@percent }
 \newlabel{tab:benchcomp}{{2}{5}{HA-Expert-Bench composition. Judge-graded items use the correct / partial / wrong rubric of Section~\ref {sec:grading}, scored 1.0 / 0.5 / 0.0 against the evidence-checked reference key}{table.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Supervised fine-tuning}{5}{subsection.4.3}\protected@file@percent }
-\newlabel{sec:sft-train}{{4.3}{5}{Supervised fine-tuning}{subsection.4.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Retrieval-augmented inference (RAG)}{5}{subsection.4.4}\protected@file@percent }
 \newlabel{sec:rag}{{4.4}{5}{Retrieval-augmented inference (RAG)}{subsection.4.4}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {5}HA-Expert-Bench}{5}{section.5}\protected@file@percent }
@@ -40,18 +40,18 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Composition}{5}{subsection.5.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Evidence-checked answer keys}{5}{subsection.5.2}\protected@file@percent }
 \newlabel{sec:keys}{{5.2}{5}{Evidence-checked answer keys}{subsection.5.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Grading protocol}{5}{subsection.5.3}\protected@file@percent }
+\newlabel{sec:grading}{{5.3}{5}{Grading protocol}{subsection.5.3}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces HA-Expert-Bench results (240 questions; means over graded items, with $n$ per cell as in Section~\ref {sec:experiments}). Bold marks the best score in each column. Three patterns organize the table: fine-tuning doubles the base model; retrieval on the \emph  {base} model outperforms the full training pipeline without it; and the combination underperforms retrieval alone on open and trap questions while posting the best quantitative score. On the 30 auto-graded items alone (no judge), the scores are 0.433 / 0.500 / 0.600 / 0.600, in the same cell order.}}{6}{table.3}\protected@file@percent }
 \newlabel{tab:main}{{3}{6}{HA-Expert-Bench results (240 questions; means over graded items, with $n$ per cell as in Section~\ref {sec:experiments}). Bold marks the best score in each column. Three patterns organize the table: fine-tuning doubles the base model; retrieval on the \emph {base} model outperforms the full training pipeline without it; and the combination underperforms retrieval alone on open and trap questions while posting the best quantitative score. On the 30 auto-graded items alone (no judge), the scores are 0.433 / 0.500 / 0.600 / 0.600, in the same cell order}{table.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Grading protocol}{6}{subsection.5.3}\protected@file@percent }
-\newlabel{sec:grading}{{5.3}{6}{Grading protocol}{subsection.5.3}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {6}Experiments and Results}{6}{section.6}\protected@file@percent }
 \newlabel{sec:experiments}{{6}{6}{Experiments and Results}{section.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Protocol}{6}{subsection.6.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Fine-tuning doubles the base model}{6}{subsection.6.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Retrieval is the largest single lever}{6}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}SFT and RAG interfere}{6}{subsection.6.4}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces HA-Expert-Bench results by configuration (240 questions; graded $n$ per Section~\ref {sec:experiments}). (a) Overall: fine-tuning doubles the base model (0.300 $\rightarrow $ 0.601); retrieval alone is worth more (0.710); the two do not compose additively (0.662). (b) By type: retrieval's largest effect is on traps (0.267 $\rightarrow $ 0.867); best quantitative: combined cell (0.550). Colors match Figure~\ref {fig:failures}.}}{7}{figure.2}\protected@file@percent }
 \newlabel{fig:results}{{2}{7}{HA-Expert-Bench results by configuration (240 questions; graded $n$ per Section~\ref {sec:experiments}). (a) Overall: fine-tuning doubles the base model (0.300 $\rightarrow $ 0.601); retrieval alone is worth more (0.710); the two do not compose additively (0.662). (b) By type: retrieval's largest effect is on traps (0.267 $\rightarrow $ 0.867); best quantitative: combined cell (0.550). Colors match Figure~\ref {fig:failures}}{figure.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}SFT and RAG interfere}{7}{subsection.6.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {7}Analysis}{7}{section.7}\protected@file@percent }
 \newlabel{sec:analysis}{{7}{7}{Analysis}{section.7}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Mechanism 1: a train/test format mismatch}{7}{subsection.7.1}\protected@file@percent }
@@ -66,10 +66,6 @@
 \@writefile{toc}{\contentsline {section}{\numberline {9}Future Work}{9}{section.9}\protected@file@percent }
 \newlabel{sec:future}{{9}{9}{Future Work}{section.9}{}}
 \bibcite{qwen3}{1}
-\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Per-question verdicts on the 15 trap items. Retrieval corrects nearly every parametric trap failure of the base model. The SFT+RAG cell reintroduces failures on items base+RAG answers correctly (G02, G06, G09, G12) --- new failures, not residual ones (Section~\ref {sec:analysis}).}}{10}{table.5}\protected@file@percent }
-\newlabel{tab:traps}{{5}{10}{Per-question verdicts on the 15 trap items. Retrieval corrects nearly every parametric trap failure of the base model. The SFT+RAG cell reintroduces failures on items base+RAG answers correctly (G02, G06, G09, G12) --- new failures, not residual ones (Section~\ref {sec:analysis})}{table.5}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {10}Data and Code Availability}{10}{section.10}\protected@file@percent }
-\newlabel{sec:availability}{{10}{10}{Data and Code Availability}{section.10}{}}
 \bibcite{transformers}{2}
 \bibcite{trl}{3}
 \bibcite{neftune}{4}
@@ -77,4 +73,8 @@
 \bibcite{vllm}{6}
 \bibcite{faiss}{7}
 \bibcite{tariq2024}{8}
+\@writefile{toc}{\contentsline {section}{\numberline {10}Data and Code Availability}{10}{section.10}\protected@file@percent }
+\newlabel{sec:availability}{{10}{10}{Data and Code Availability}{section.10}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Per-question verdicts on the 15 trap items, questions shown verbatim. Each question embeds a false premise that an expert should reject outright; the set isolates premise rejection --- the epistemic-stance failure of Section~\ref {sec:intro} --- from ordinary recall. Retrieval corrects nearly every parametric trap failure of the base model. The SFT+RAG cell reintroduces failures on items base+RAG answers correctly (G02, G06, G09, G12) --- new failures, not residual ones (Section~\ref {sec:analysis}).}}{11}{table.5}\protected@file@percent }
+\newlabel{tab:traps}{{5}{11}{Per-question verdicts on the 15 trap items, questions shown verbatim. Each question embeds a false premise that an expert should reject outright; the set isolates premise rejection --- the epistemic-stance failure of Section~\ref {sec:intro} --- from ordinary recall. Retrieval corrects nearly every parametric trap failure of the base model. The SFT+RAG cell reintroduces failures on items base+RAG answers correctly (G02, G06, G09, G12) --- new failures, not residual ones (Section~\ref {sec:analysis})}{table.5}{}}
 \gdef \@abspage@last{11}

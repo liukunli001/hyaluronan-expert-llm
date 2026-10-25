@@ -45,8 +45,9 @@ pretraining (DAPT) on 60M tokens of the corpus, then full-parameter
 supervised fine-tuning (SFT) on 12,003 question--answer pairs it
 generated itself --- optionally grounded at inference by retrieval over
 a 636,959-passage FAISS index; and (iii) HA-Expert-Bench: 240 questions
-whose reference answers evidence-restricted LLM verifiers confirmed or
-corrected (212 of 240), including 15 adversarial ``trap'' questions. In a four-cell ablation, SFT doubles the base model
+whose reference answers were confirmed or corrected by
+evidence-restricted LLM verifiers (212 of 240 settled), including 15
+adversarial ``trap'' questions. In a four-cell ablation, SFT doubles the base model
 (0.300 $\rightarrow$ 0.601); retrieval is the largest single lever
 (base+RAG 0.710; traps 0.267 $\rightarrow$ 0.867); and SFT and RAG do
 \textbf{not} compose additively (0.662): a model never trained on
@@ -69,7 +70,12 @@ probes found three systematic failures: \emph{behavior} (base model
 continued prompts with invented follow-up questions), \emph{epistemic
 stance} (assent to false premises --- HA is a protein polymer; HA
 solutions are Newtonian fluids), and \emph{verifiability} (quantitative
-claims with no checkable source).
+claims with no checkable source). Two of the three appear in a single
+response: asked whether HA solutions are Newtonian, the base model first
+invents follow-up questions (``Also, how do I calculate the viscosity of
+a 10\% w/w solution of HA in water at 25$^\circ$C\ldots?'') and then
+assents --- ``Yes, HA solutions are simple Newtonian fluids, so their
+viscosity is a single constant.''
 
 We address them with the standard toolkit (continued pretraining,
 instruction tuning, retrieval) under three small-lab constraints: (1) one
@@ -117,6 +123,32 @@ recall.
 \textbf{DAPT sets.} A \emph{core set} of 4,952 papers (60.0M tokens) and
 an \emph{anneal set} of 498 papers (5.7M tokens) of reviews and methods
 papers, placed last, with 12\% FineWeb-Edu replay.
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lr}
+\toprule
+Corpus statistic & Value \\
+\midrule
+Papers & 12,306 \\
+Distinct journals & 1,819 \\
+Total tokens & $\approx$126M \\
+Text length per paper (chars) & median 32,757; mean 35,847 \\
+\midrule
+Published before 2010 & 117 \\
+Published 2010--2019 & 3,842 \\
+Published 2020--present & 8,347 \\
+\midrule
+Top journals & \emph{Int.\ J.\ Mol.\ Sci.} (487); \emph{Sci.\ Rep.} (353); \\
+ & \emph{PLoS ONE} (312); \emph{Pharmaceutics} (302); \\
+ & \emph{Polymers} (229) \\
+\bottomrule
+\end{tabular}
+\caption{The HA corpus at a glance (metadata from PubMed Central
+records). The literature is recent and dispersed: two-thirds of papers
+are from 2020 or later, spread across 1,819 journals.}
+\label{tab:corpus}
+\end{table}
 
 \textbf{What the model reads.} Two samples from the released artifacts
 show the actual inputs. A corpus record (PMC10000474, \emph{Foods},
@@ -262,11 +294,11 @@ only an evidence pack could \emph{confirm} a key, \emph{correct} it
 traced to source papers for 38 questions, keyword-retrieved for 202): 118
 verified, 19 corrected, 103 uncertain. Round two (the 103, against top-6
 vector-retrieved passages, Section~\ref{sec:rag}): 72 verified, 3
-corrected, 28 still uncertain. Released v3 set: 190 verified, 22
-corrected --- \textbf{212 of 240 (88.3\%) evidence-settled} --- 28
-(11.7\%) flagged uncertain. Only three keys changed in round two (B22,
-F07; G14), and re-scoring under v3 changed no auto-grade and no G14
-verdict.
+corrected, 28 still uncertain. The released v3 set has 190 verified and
+22 corrected keys --- \textbf{212 of 240 (88.3\%) evidence-settled} ---
+with 28 (11.7\%) flagged uncertain. Only three keys changed in round two
+(B22, F07, G14). Re-scoring those three under v3 changed no auto-grade
+and no verdict.
 
 \subsection{Grading protocol}
 \label{sec:grading}
@@ -398,15 +430,46 @@ distilled; retrieval lowers both counts. The annotation marks Mechanism
 
 \subsection{Case studies}
 
-Both mechanisms appear in pure form on trap items. \textbf{G13}
-(``HA solutions are Newtonian fluids, so viscosity is a single
-constant''): the SFT model assents, repeating itself (``Yes, HA
-solutions are simple Newtonian fluids\ldots''); with retrieval it
-corrects the premise (``No, HA solutions are not simple Newtonian
-fluids\ldots''). \textbf{G09} (highest-MW HA always best for joint
-injections): the SFT model rejects the absolute; SFT+RAG degenerates
-into a citation-marker loop (``[1] [4] [2] [3] $\ldots$''). Retrieval
-rescues G13 and destroys G09.
+Both mechanisms appear in pure form on trap items.
+Table~\ref{tab:example} shows one trap question end to end.
+\textbf{G09} (highest-MW HA always best for joint injections): the SFT
+model rejects the absolute; SFT+RAG degenerates into a citation-marker
+loop (``[1] [4] [2] [3] $\ldots$''). Retrieval rescues G13 and destroys
+G09.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{p{0.16\textwidth}p{0.66\textwidth}l}
+\toprule
+Configuration & Response to G13 (excerpt) & Verdict \\
+\midrule
+Base & ``Also, how do I calculate the viscosity of a 10\% w/w solution
+of HA in water at 25$^\circ$C, and what is the viscosity of a 10\% w/w
+solution of HA in water at 37$^\circ$C? \ldots\ Yes, HA solutions are
+simple Newtonian fluids, so their viscosity is a single constant.'' &
+wrong \\
++ DAPT \& SFT & ``Yes, HA solutions are simple Newtonian fluids, so
+their viscosity is a single constant. HA solutions are simple Newtonian
+fluids, so their viscosity is a single constant. HA solutions are simple
+Newtonian fluids \ldots'' (repeated to the token limit) & wrong \\
++ RAG & ``No, HA solutions are non-Newtonian fluids, so their viscosity
+is not a single constant.'' & correct \\
++ DAPT \& SFT \& RAG & ``No, HA solutions are not simple Newtonian
+fluids. They display non-Newtonian flow characteristics, specifically
+pseudoplastic (shear-thinning) behavior. This means that their viscosity
+decreases as shear rate increases.'' & correct \\
+\bottomrule
+\end{tabular}
+\caption{Worked example --- trap question G13: ``HA solutions are simple
+Newtonian fluids, so their viscosity is a single constant, correct?''
+Reference key: false (HA solutions are non-Newtonian and
+shear-thinning). Responses are verbatim excerpts from the
+Section~\ref{sec:experiments} run; ellipses mark trimming. The base
+model invents follow-up questions before assenting; the fine-tuned model
+assents and repeats itself; both retrieval cells correct the premise.}
+\label{tab:example}
+\end{table}
 
 \begin{table}[t]
 \centering

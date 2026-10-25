@@ -33,30 +33,41 @@ Independent Researcher, San Francisco Bay Area, USA\\
 
 
 \begin{abstract}
-General-purpose large language models are unreliable guides to
-specialized scientific literatures: their answers are fluent, yet
-frequently wrong in quantitative detail and confidently asserted even
-when a question rests on a false premise. We examine one such
-literature --- hyaluronan (hyaluronic acid, HA) --- and ask how far a
-single researcher, without datacenter resources, can go toward a
-trustworthy domain model. We release three artifacts: (i) a corpus of
-12,306 HA papers ($\approx$126M tokens); (ii) HA-Expert, a
-Qwen3-8B-Base model adapted in two stages --- domain-adaptive continued
-pretraining (DAPT) on 60M tokens of the corpus, followed by
-full-parameter supervised fine-tuning (SFT) on 12,003 question--answer
-pairs the model generated itself --- and optionally grounded at
-inference by retrieval over a 636,959-passage FAISS index; and (iii)
-HA-Expert-Bench, 240 questions whose reference answers were confirmed
-or corrected by evidence-restricted LLM verifiers (212 of 240 settled),
-including 15 adversarial ``trap'' questions built on false premises. In
-a four-cell ablation, fine-tuning doubles the base model's score (0.300
-$\rightarrow$ 0.601); retrieval is the largest single lever (base+RAG
-0.710; trap accuracy 0.267 $\rightarrow$ 0.867); and the two do
-\textbf{not} compose additively (combined 0.662): a model never trained
-on retrieved context collapses into citation-marker loops (5 of 240
-responses) and inherits its teacher's repetition habit. The recipe, the
-benchmark, and both failure modes should transfer to other small,
-literature-bound fields.
+General-purpose large language models answer questions about
+specialized scientific literatures fluently but unreliably: they err
+on quantitative details and remain confident even when a question rests
+on a false premise. This paper asks what a single researcher, working
+without datacenter resources, can do about one such literature ---
+hyaluronan (hyaluronic acid, HA). We build HA-Expert from
+Qwen3-8B-Base by domain-adaptive continued pretraining (DAPT) on 60M
+tokens drawn from a corpus of 12,306 HA papers ($\approx$126M tokens),
+followed by full-parameter supervised fine-tuning (SFT) on 12,003
+question--answer pairs that the DAPT model generated itself and that a
+grounding filter retained. At inference, the model can be grounded by
+retrieval over a 636,959-passage FAISS index. To measure
+trustworthiness rather than fluency, we construct HA-Expert-Bench: 240
+questions whose reference answers were confirmed or corrected by
+evidence-restricted LLM verifiers (212 of 240 settled), including 15
+adversarial trap questions built on false premises. In a four-cell
+ablation, fine-tuning doubles the base model's score (0.300
+$\rightarrow$ 0.601) and retrieval is the largest single lever
+(base+RAG 0.710; trap accuracy 0.267 $\rightarrow$ 0.867), yet the two
+do \textbf{not} compose additively (combined 0.662). We trace the
+shortfall to two mechanisms: a train/test format mismatch, in which a
+model never trained on retrieved context collapses into
+citation-marker loops (5 of 240 responses), and repetition inherited
+through self-distillation from the teacher --- here, the model itself.
+Because the pipeline is domain-agnostic apart from the corpus query,
+the same recipe applies to other literature-bound fields, such as
+heparin and other glycosaminoglycans or bioconjugation chemistry.
+Beyond question answering, the released model already proposes novel
+research ideas and expands them into structured plans with hypotheses
+and experimental methods; adding corpus-scale novelty checking against
+the literature would turn this capability into a practical research
+tool. A model with a verified command of a field's literature could
+likewise serve as a first-pass reviewer of new submissions --- a use
+that, like ideation, requires evidence-checked evaluation before it
+can be trusted.
 \end{abstract}
 
 \section{Introduction}

@@ -45,10 +45,10 @@ full-parameter supervised fine-tuning (SFT) on 12,003
 question--answer pairs the DAPT model generated itself, retained by a
 grounding filter; at inference, retrieval over a 636,959-passage FAISS
 index can ground its answers. To measure trustworthiness rather than
-fluency, we construct HA-Expert-Bench --- 240 questions whose
-reference answers evidence-restricted LLM verifiers confirmed or
-corrected (212 of 240 settled), including 15 adversarial trap
-questions built on false premises. In a four-cell ablation,
+fluency, we construct HA-Expert-Bench: 240 questions whose keyed
+answers were confirmed or corrected by LLM verifiers shown only
+retrieved evidence (212 of 240 settled), including 15 adversarial
+trap questions built on false premises. In a four-cell ablation,
 fine-tuning doubles the base score (0.300 $\rightarrow$ 0.601) and
 retrieval is the largest single lever (base+RAG 0.710; traps 0.267
 $\rightarrow$ 0.867), yet the two do \textbf{not} compose additively
@@ -56,12 +56,12 @@ $\rightarrow$ 0.867), yet the two do \textbf{not} compose additively
 mismatch that collapses a model never trained on retrieved context
 into citation-marker loops (5 of 240 responses), and repetition
 inherited through self-distillation. The pipeline is domain-agnostic
-apart from the corpus query, so the recipe transfers to other
-literature-bound fields (heparin and other glycosaminoglycans;
-bioconjugation chemistry). The released model already drafts novel
-research ideas into structured plans; extended with corpus-scale
-novelty checking and evidence-checked evaluation, the same approach
-points toward ideation support and first-pass reviewing.
+apart from the corpus query, so the recipe transfers to other fields
+defined by a literature (heparin and other glycosaminoglycans;
+bioconjugation chemistry). The released model already turns novel
+research ideas into structured plans; adding corpus-scale novelty
+checking and evidence-checked evaluation would extend the same
+approach to ideation support and first-pass reviewing.
 \end{abstract}
 
 \section{Introduction}
@@ -98,8 +98,8 @@ Constraint (2) makes the training a self-distillation exercise; we
 therefore measure its risks rather than assume them away.
 
 Our contributions are the corpus, the model
-(Section~\ref{sec:methods}), and the benchmark. The headline result is
-negative. In the four-cell ablation, fine-tuning doubles the base
+(Section~\ref{sec:methods}), and the benchmark --- and the headline
+result is negative. In the four-cell ablation, fine-tuning doubles the base
 model's score and retrieval on the untrained base is worth still more,
 yet their combination underperforms retrieval alone
 (Section~\ref{sec:analysis}).
@@ -120,13 +120,14 @@ with Qwen3-8B-Base and Qwen3-Embedding-0.6B~\cite{qwen3} in
 Transformers and TRL~\cite{transformers,trl}, with NEFTune
 noise~\cite{neftune} and general-domain replay~\cite{fineweb}.
 Self-generated instruction data risks distilling the generator's errors
-and habits unchecked; we mitigate this risk with a grounding filter
+and habits unchecked; we guard against this with a grounding filter
 (Section~\ref{sec:sft-data}) and an evaluation designed to expose
 whatever survives it. Dense retrieval (FAISS~\cite{faiss}) is the
 standard remedy for the resulting knowledge gaps. Finally, domain
-benchmarks commonly ship model-written answer keys that were never
-re-checked, so key errors are silently inherited by every judged score;
-our keys are evidence-verified (Section~\ref{sec:bench}).
+benchmarks commonly ship model-written answer keys that no one
+re-checks, so any key error silently propagates into every judged
+score; our keys, by contrast, are evidence-verified
+(Section~\ref{sec:bench}).
 
 \section{Corpus}
 \label{sec:corpus}
@@ -234,8 +235,8 @@ effective batch of 128 sequences (8 $\times$ gradient accumulation 16;
 cosine decay, for 212 steps ($\approx$111M tokens) in 5\,h 34\,min on a
 single RTX PRO 6000 (96\,GB), reaching a final loss of $\approx$1.55.
 On a 63-question development split, DAPT tied the base model on
-auto-graded items (5/6) yet repaired knowledge traps the base model had
-missed --- evidence that it changed what the model \emph{knows} rather
+auto-graded items (5/6) yet repaired trap questions the base model
+had failed --- evidence that it changed what the model \emph{knows} rather
 than how it \emph{behaves}, and the motivation for the SFT stage that
 follows.
 
@@ -424,8 +425,8 @@ retrieval. The deficit concentrates in the judged formats --- open
 (0.676 vs.\ 0.719) and trap (0.633 vs.\ 0.867) --- but is not uniform:
 the combined cell is the best on quantitative questions (0.550 vs.\
 0.450). On the 30 auto-graded items, the two cells \emph{tie} (0.600
-each), which locates the headline gap in the judged formats rather
-than the objective subset.
+each), which places the headline gap in the judged formats, not the
+objective subset.
 
 \section{Analysis}
 \label{sec:analysis}
@@ -563,11 +564,11 @@ silently into every score, including the drafting model's own.
 (0.700 vs.\ 0.900) is two questions, and we draw no conclusion from it.
 Trap verdicts ($n=15$) are reported in Table~\ref{tab:traps}.
 \textbf{Attestation, not truth.} The grounding filter's overlap
-threshold ($\geq 0.55$) shows that an answer is about a real passage,
-not that it states the passage correctly, so the SFT data can encode
-teacher errors (Section~\ref{sec:sft-data}); factual contamination of
-the same kind as the repetition inheritance
-(Section~\ref{sec:analysis}) cannot be excluded without an expert
+threshold ($\geq 0.55$) shows that an answer is anchored to a real
+passage, not that it renders the passage correctly, so the SFT data
+can encode teacher errors (Section~\ref{sec:sft-data}); factual
+contamination --- the counterpart of the repetition inheritance of
+Section~\ref{sec:analysis} --- cannot be ruled out without an expert
 audit.
 \textbf{Decoding and scale.} All results come from a single greedy
 run, and repetition is decode-sensitive, so the size of Mechanism 2 is
@@ -596,16 +597,17 @@ and settle the 28 uncertain keys.
 Beyond hyaluronan, we see three directions. First, \emph{other
 domains}: the pipeline is domain-agnostic apart from the corpus query
 (Section~\ref{sec:corpus}), so the same recipe applies to other
-literature-bound fields, such as heparin and other glycosaminoglycans
-or bioconjugation chemistry. Second, \emph{ideation}: the released
-model already proposes novel research ideas and expands them into
-structured plans with hypotheses and experimental methods; adding
-corpus-scale novelty checking against the literature would turn this
-capability into a practical research tool. Third, \emph{review}: a
-model with a verified command of a field's literature could serve as a
-first-pass reviewer of new submissions, checking their claims against
-that literature --- a use that, like ideation, requires
-evidence-checked evaluation before it can be trusted.
+fields defined by a literature, such as heparin and other
+glycosaminoglycans or bioconjugation chemistry. Second,
+\emph{ideation}: the released model already proposes novel research
+ideas and expands them into structured plans with hypotheses and
+experimental methods; adding corpus-scale novelty checking would
+turn this capability into a practical research tool. Third,
+\emph{review}: a model with a verified command of a field's
+literature could serve as a first-pass reviewer of new submissions,
+checking their claims against that literature --- a use that, like
+ideation, requires evidence-checked evaluation before it can be
+trusted.
 
 \section{Data and Code Availability}
 \label{sec:availability}

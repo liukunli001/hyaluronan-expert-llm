@@ -80,9 +80,13 @@ def fig1():
     for yb, yt, label, fc in lanes:
         ax.add_patch(FancyBboxPatch((0.5, yb), 129.0, yt - yb,
                                     boxstyle="round,pad=0,rounding_size=1.2",
-                                    fc=fc, ec="#BBBBBB", lw=0.8, zorder=0))
-        ax.text(3.5, yt - 2.6, label, fontsize=10.5, fontweight="bold",
-                va="center", ha="left", color="#555555", zorder=5)
+                                    fc=fc, ec="#AAAAAA", lw=0.9, zorder=0))
+        # Lane titles sit on opaque white pills (zorder above the arrows),
+        # so a connector passing the corner never strikes the text through.
+        ax.text(3.5, yt - 2.9, label, fontsize=10.5, fontweight="bold",
+                va="center", ha="left", color="#444444", zorder=6,
+                bbox=dict(boxstyle="round,pad=0.38", fc="white",
+                          ec="#999999", lw=0.7))
 
     def box(x, cy, w, lines, fc="white", tc=EDGE):
         """lines: list of (text, kind); kind 't' = title (10pt bold),

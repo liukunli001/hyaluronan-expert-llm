@@ -40,7 +40,7 @@ on a false premise. We ask what a single researcher, without
 datacenter resources, can do about one such literature ---
 hyaluronan (hyaluronic acid, HA). From a corpus of 12,306 HA papers
 ($\approx$126M tokens), we build HA-Expert by domain-adaptive
-continued pretraining of Qwen3-8B-Base (DAPT; 60M tokens) and
+continued pretraining of Qwen3-8B-Base (DAPT; 60M core + 5.7M anneal tokens) and
 full-parameter supervised fine-tuning (SFT) on 12,003
 question--answer pairs the DAPT model generated itself, retained by a
 grounding filter; at inference, retrieval over a 636,959-passage FAISS
@@ -110,7 +110,7 @@ yet their combination underperforms retrieval alone
 We assemble standard components rather than new algorithms; the
 interest lies in their interaction. Continued pretraining followed by
 full-parameter SFT is the established route to domain language models,
-and domain-specific systems have repeatedly outperformed larger general
+and domain-specific systems can outperform larger general
 or biomedical models on specialized tasks: Tariq et
 al.~\cite{tariq2024}, for example, trained a 124M-parameter
 prostate-cancer model with a domain-specific tokenizer and UMLS-guided

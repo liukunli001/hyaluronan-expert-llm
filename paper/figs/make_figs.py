@@ -133,35 +133,37 @@ def fig1():
                 fc="#0072B2", tc="white")
     arrow(corpus["right"], 81.0, tok["left"], 81.0)
     arrow(tok["right"], 81.0, dapt["left"], 81.0)
-    # wrap: DAPT -> SFT data (down, left along the inter-row gap, down)
+    # DAPT -> SFT data: orthogonal elbow through the empty inter-row gap
     elbow([(dapt["cx"], dapt["bot"]), (dapt["cx"], 73.6),
            (sftdata["cx"], 73.6), (sftdata["cx"], sftdata["top"])], EDGE)
+    ax.text(60.5, 75.3, "DAPT model generates", fontsize=8.5,
+            color="#555555", va="center", ha="center")
     arrow(sftdata["right"], 66.8, sft["left"], 66.8)
     arrow(sft["right"], 66.8, model["left"], 66.8)
 
-    # --- Retrieval lane: row 1 (cy=47), row 2 (cy=32)
-    chunks = box(2.0, 47.0, 29.0, [("Text chunks", T), ("~900 chars", S)])
-    embed = box(33.4, 47.0, 45.5, [("Embedding", T),
+    # --- Retrieval lane: single row (cy=40), boxes left to right
+    chunks = box(2.0, 40.0, 24.0, [("Text chunks", T), ("~900 chars", S)])
+    embed = box(29.0, 40.0, 37.0, [("Embedding", T),
                                    ("Qwen3-Embedding-0.6B", S),
                                    ("1,024-dim vectors", S)])
-    faiss = box(44.0, 32.0, 35.0, [("FAISS index", T),
+    faiss = box(69.0, 40.0, 28.0, [("FAISS index", T),
                                    ("636,959 passages", S)])
-    top4 = box(82.4, 32.0, 25.0, [("Top-4", T), ("retrieval", T),
-                                  ("at inference", S)])
-    arrow(chunks["right"], 47.0, embed["left"], 47.0)
-    # Embedding -> FAISS index (down, right along the inter-row gap, down)
-    elbow([(embed["cx"], embed["bot"]), (embed["cx"], 38.7),
-           (faiss["cx"], 38.7), (faiss["cx"], faiss["top"])], EDGE)
-    arrow(faiss["right"], 32.0, top4["left"], 32.0)
+    top4 = box(100.0, 40.0, 23.0, [("Top-4", T), ("retrieval", T),
+                                   ("at inference", S)])
+    arrow(chunks["right"], 40.0, embed["left"], 40.0)
+    arrow(embed["right"], 40.0, faiss["left"], 40.0)
+    arrow(faiss["right"], 40.0, top4["left"], 40.0)
     # corpus feeds the retrieval lane (long vertical at the left)
     arrow(16.35, corpus["bot"], 16.35, chunks["top"], color="#0072B2")
     ax.text(18.6, 59.3, "same corpus", fontsize=9, color="#0072B2",
             va="center", ha="left")
-    # retrieval feeds the model (RAG on/off): diagonal, horizontal label
-    arrow(top4["cx"], top4["top"], model["cx"], model["bot"],
+    # retrieval feeds the model (RAG on/off): orthogonal elbow up through
+    # the inter-lane gap, then into the model box from below
+    elbow([(top4["cx"], top4["top"]), (top4["cx"], 59.3),
+           (model["cx"], 59.3), (model["cx"], model["bot"])],
           color="#0072B2")
-    ax.text(96.5, 47.5, "RAG on/off", fontsize=9, color="#0072B2",
-            va="center", ha="left")
+    ax.text(109.0, 52.0, "RAG on/off", fontsize=9, color="#0072B2",
+            va="center", ha="right")
 
     # --- Evaluation lane (cy=9.5)
     bench = box(2.0, 9.5, 42.5, [("HA-Expert-Bench", T),
@@ -175,10 +177,12 @@ def fig1():
                                    ("0.710 · 0.662", S)])
     arrow(bench["right"], 9.5, configs["left"], 9.5)
     arrow(configs["right"], 9.5, scores["left"], 9.5)
-    # model is evaluated: elbow down the right strip to the Scores box
-    elbow([(80.5, model["bot"]), (80.5, 23.2), (scores["cx"], 23.2),
+    # model is evaluated: orthogonal spine down the far-right margin,
+    # along the evaluation lane, and into the Scores box from above
+    elbow([(model["right"], model["cy"]), (125.5, model["cy"]),
+           (125.5, 17.8), (scores["cx"], 17.8),
            (scores["cx"], scores["top"])], color="#009E73")
-    ax.text(91.0, 20.0, "evaluate", fontsize=9, color="#009E73",
+    ax.text(113.5, 19.9, "evaluate", fontsize=9, color="#009E73",
             va="center", ha="center")
 
     save(fig, "fig1-pipeline", tight=False)

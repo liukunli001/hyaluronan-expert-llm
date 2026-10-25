@@ -1,0 +1,185 @@
+<OTHER>
+HA-Expert: A Domain-Adapted Language Model and Evidence-Checked Benchmark for Hyaluronan Research
+
+Kunli Liu — Independent Researcher, San Francisco Bay Area, USA — liukunli001@gmail.com
+
+Abstract
+
+General-purpose LLMs handle specialized fields' literatures unreliably: fluent answers, often wrong on quantitative details and confident even when a premise is false. We study one such field — hyaluronan (hyaluronic acid, HA) — and ask how far a single researcher can go, on under USD 50 of cloud compute, toward a trustworthy domain model. We release (i) a corpus of 12,306 HA papers (~126M tokens); (ii) HA-Expert, a Qwen3-8B-Base model adapted in two stages — domain-adaptive continued pretraining (DAPT) on 60M tokens of the corpus, then full-parameter supervised fine-tuning (SFT) on 12,003 question–answer pairs it generated itself — optionally grounded at inference by retrieval over a 636,959-passage FAISS index; and (iii) HA-Expert-Bench: 240 questions whose reference answers evidence-restricted LLM verifiers confirmed or corrected (212 of 240), including 15 adversarial "trap" questions. In a four-cell ablation, SFT doubles the base model (0.300 → 0.601); retrieval is the largest single lever (base+RAG 0.710; traps 0.267 → 0.867); and SFT and RAG do not compose additively (0.662): a model never trained on retrieved context collapses into citation-marker loops (5 of 240 responses) and inherits its teacher's repetition habit.
+
+1 Introduction
+
+Hyaluronan is a linear glycosaminoglycan of repeating β-1,4-glucuronic-acid / β-1,3-N-acetylglucosamine disaccharides. Practitioners' knowledge — molecular-weight-dependent biology, receptor interactions, chemical modification, production, clinical dosing — is spread across thousands of chemistry, materials, and medical papers.
+
+General-purpose LLMs promise an interface to such a literature, but our probes found three systematic failures: behavior (base model continued prompts with invented follow-up questions), epistemic stance (assent to false premises — HA is a protein polymer; HA solutions are Newtonian fluids), and verifiability (quantitative claims with no checkable source).
+
+We address them with the standard toolkit (continued pretraining, instruction tuning, retrieval) under three small-lab constraints: (1) one rented GPU, total compute under USD 50; (2) no paid teacher: supervision self-generated, then filtered; (3) trusted evaluation: reference answers checked against source text, not merely model-written. Constraint (2) makes this a self-distillation exercise, whose risks we measure, not assume away.
+
+Contributions: the corpus, the model (Section 4), and the benchmark. The headline result is negative: in the four-cell ablation, fine-tuning doubles the base score, retrieval on the untrained base is worth still more, yet the combination underperforms retrieval alone (Section 7).
+
+2 Related Work
+
+We assemble standard components, not new algorithms; the interest is their interaction. Continued pretraining plus full-parameter SFT is the established route to domain language models, instantiated here with Qwen3-8B-Base and Qwen3-Embedding-0.6B [1] in Transformers and TRL [2, 3], with NEFTune noise [4] and general-domain replay [5]. Self-generated instruction data risks distilling the generator's errors and habits unchecked, mitigated by a grounding filter (Section 4.2) and an evaluation designed to expose what survives it. Dense retrieval (FAISS [7]) is the standard remedy for such failures. Domain benchmarks commonly ship un-re-checked model-written keys whose errors judges inherit; ours are evidence-verified (Section 5).
+
+3 Corpus
+
+Harvest and cleaning. Harvesting PubMed Central's open-access subset gave 16,642 records, 12,945 with retrievable JATS XML full text. Plain-text conversion, deduplication (exact and near), and language/length filtering left 12,306 papers, ≈126M tokens.
+
+Holdout. Thirty review papers were set aside before any processing and excluded from all downstream stages (DAPT, SFT data, index), so questions derived from them measure generalization, not recall.
+
+DAPT sets. A core set of 4,952 papers (60.0M tokens) and an anneal set of 498 papers (5.7M tokens) of reviews and methods papers, placed last, with 12% FineWeb-Edu replay.
+
+4 Methods
+
+Three stages (DAPT, SFT on self-generated data, retrieval-augmented inference), then evaluation on HA-Expert-Bench (Section 5; Figure 1) — all on one rented GPU.
+
+
+
+Figure 1. The HA-Expert pipeline. Training: the 12,306-paper corpus is tokenized for DAPT of Qwen3-8B-Base, which then generates its own grounding-filtered SFT data. Retrieval: the corpus is chunked into a FAISS index of 636,959 passages; the top-4 are prepended at inference (RAG on; off: parameters alone). Evaluation: all four configurations are scored on HA-Expert-Bench's 240 evidence-checked questions.
+
+4.1 Domain-adaptive pretraining (DAPT)
+
+Full-parameter continued pretraining of Qwen3-8B-Base [1] on the Section 3 DAPT sets: documents chunked into 4,096-token sequences (legacy block packing), SDPA attention; effective batch 128 sequences (8 × gradient accumulation 16) = 524,288 tokens/step; learning rate 1×10⁻⁵, cosine decay; 212 steps (≈111M tokens) in 5 h 34 min on a single RTX PRO 6000 (96 GB); final loss ≈1.55. On a 63-question development split, DAPT tied base on auto-graded items (5/6) yet repaired knowledge traps it missed: it changed what the model knows, not how it behaves — motivating SFT.
+
+4.2 Self-generated SFT data
+
+The DAPT model served as its own teacher:
+
+Serve the DAPT model locally with vLLM [6].
+
+Sample passages, excluding the 30 holdout papers (Section 3).
+
+Generate a question–answer pair per passage, anchored to the passage.
+
+Retain only pairs whose answer is grounded in the passage (content-word overlap ≥ 0.55); deduplicate.
+
+Two rounds: 5,403 + 6,600 retained pairs — 12,003 examples — filtered for topical attestation, not truth (Section 8).
+
+4.3 Supervised fine-tuning
+
+Full-parameter SFT in prompt/completion format, loss on the completion only: learning rate 1×10⁻⁵, 2 epochs (752 steps), NEFTune noise [4] 5.0, 8-bit Adam; final train loss 1.214 in ≈19 minutes. The base model's signature pathology (inventing follow-up questions) disappeared.
+
+4.4 Retrieval-augmented inference (RAG)
+
+All 12,306 papers were chunked by merging paragraphs to ≈900 characters (150-character overlap on long paragraphs) and embedded with Qwen3-Embedding-0.6B (1,024-dimensional) into a FAISS IndexFlatIP [7] index of 636,959 passages (holdout absent). At inference the top-4 passages are prepended with citation markers [1]–[4] the model is instructed to cite. Decoding: demo, repetition penalty 1.05 (largely suppresses the repetition failure mode, Section 7); benchmark, plain greedy, so aids cannot mask measured behavior.
+
+5 HA-Expert-Bench
+
+5.1 Composition
+
+HA-Expert-Bench: 240 questions in seven categories (basics; history/industry; synthesis/chemistry; modification/derivatives; molecular-weight biology/receptors; nano-delivery; experimental/clinical topics) and four formats (Table 3). Trap questions embed a false premise an expert should reject (premise rejection, Section 1).
+
+
+
+<TABLE>
+HA-Expert-Bench composition. Judge-graded items use the correct / partial / wrong rubric of Section 5.3, scored 1.0 / 0.5 / 0.0 against the evidence-checked reference key.
+
+5.2 Evidence-checked answer keys
+
+Each draft key passed an evidence-restricted protocol: verifiers with only an evidence pack could confirm a key, correct it (quoting the decisive passage), or mark it uncertain. Round one (packs traced to source papers for 38 questions, keyword-retrieved for 202): 118 verified, 19 corrected, 103 uncertain. Round two (the 103, against top-6 vector-retrieved passages, Section 4.4): 72 verified, 3 corrected, 28 still uncertain. Released v3 set: 190 verified, 22 corrected — 212 of 240 (88.3%) evidence-settled — 28 (11.7%) flagged uncertain. Only three keys changed in round two (B22, F07; G14), and re-scoring under v3 changed no auto-grade and no G14 verdict.
+
+5.3 Grading protocol
+
+Multiple-choice: exact option letter; quantitative: numeric tolerance. Open and trap items are graded by an LLM judge shown question, evidence-checked reference answer, and response, returning correct / partial / wrong (1.0 / 0.5 / 0.0). The judge was the SFT model itself, served locally ($0; bias: Section 8). Mitigation: fixed-key anchoring, plus the 30 automatic items as a judge-free control (Section 6). Unparseable outputs were re-judged in a retry pass (scores moved by at most 0.004).
+
+6 Experiments and Results
+
+6.1 Protocol
+
+Four cells: base (Qwen3-8B-Base), adapted (DAPT+SFT), each also with retrieval. All responses used greedy decoding (temperature 0, maximum 512 tokens) on a single RTX PRO 6000 (96 GB). Unparseable-after-retry items remained ungraded — 13 (base), 23 (DAPT+SFT), 2 (base+RAG), 21 (DAPT+SFT+RAG) — leaving n = 227, 217, 238, 219. Gaps below ≈0.02 are noise.
+
+
+
+<TABLE>
+HA-Expert-Bench results (240 questions; means over graded items, n per cell as in Section 6). Bold marks the best score in each column. Three facts organize the table: fine-tuning doubles the base model; retrieval on the base model beats the full training pipeline without it; and the combination underperforms retrieval alone on open and trap questions while posting the best quantitative score. On the 30 auto-graded items alone (no judge): 0.433 / 0.500 / 0.600 / 0.600, same cell order.
+
+
+
+Figure 2. HA-Expert-Bench results by configuration (240 questions; graded n per Section 6). (a) Overall: fine-tuning doubles the base model (0.300 → 0.601); retrieval alone is worth more (0.710); the two do not compose additively (0.662). (b) By type: retrieval's largest effect is on traps (0.267 → 0.867); best quantitative: combined cell (0.550). Colors match Figure 3.
+
+6.2 Fine-tuning doubles the base model
+
+DAPT+SFT scores 0.601 against base 0.300 (Table 1, Figure 2), the gain largest where the base deficit was behavioral (open questions: 0.282 → 0.631; the model now answers instead of continuing the prompt; cf. Section 4.1). Trap accuracy improves (0.267 → 0.500) but remains unreliable.
+
+6.3 Retrieval is the largest single lever
+
+Base+RAG scores 0.710 — above the full pipeline without retrieval (0.601). The effect is largest where parametric knowledge is least reliable: trap accuracy rises 0.267 → 0.867, and both parametric trap failures (G01, G13) are corrected by both retrieval cells. A false premise is hard to reject from memory, easy with the contradicting passage in the prompt.
+
+6.4 SFT and RAG interfere
+
+DAPT+SFT+RAG (0.662) trails base+RAG despite dominating it without retrieval. The deficit concentrates in the judged formats — open (0.676 vs. 0.719), trap (0.633 vs. 0.867) — but not uniformly: the combined cell is best on quantitative questions (0.550 vs. 0.450). On the 30 auto-graded items it ties base+RAG (0.600 each): the headline gap lives in the judged formats, not the objective subset.
+
+7 Analysis
+
+7.1 Mechanism 1: a train/test format mismatch
+
+The SFT data (Section 4.2) contains only bare question→answer pairs, so the fine-tuned model never saw the RAG format (question + four retrieved passages + citation instruction). On 5 of 240 such inputs it collapses into a citation-marker loop ("[1] [4] [2] [3] [1] [4] [2] [3] …"), scoring zero on questions it answers correctly without retrieval. The failure is diagnostic: the markers are the most salient novel tokens in the unseen format, and a model trained to continue its prompt's pattern continues them — a training-data omission, not retrieval hurting a well-matched model (fix: Section 9).
+
+7.2 Mechanism 2: repetition inherited through self-distillation
+
+Heavy repetition (defined in Figure 3) appears in 35 of 240 DAPT+SFT responses vs. 10 of 240 for base, retrieval lowering both (7, 22 of 240). Because the teacher was the DAPT model itself (Section 4.2), its repetition habit was distilled into the student — self-distillation transmits even degenerate behavior, unscreened by a content-word grounding filter. Repetition is decode-sensitive — largely suppressed in the demo (Section 4.4) — but the benchmark's unaided greedy decoding measures it.
+
+
+
+Figure 3. Failure-mode counts per configuration (240 responses each, greedy decoding). Heavy repetition: a 30-character block repeated at least 5× in one response. Self-generated fine-tuning data more than triples the base count (10 → 35): the teacher's habit, distilled; retrieval lowers both counts. The annotation marks Mechanism 1's 5 citation-marker loops (DAPT+SFT+RAG only).
+
+7.3 Case studies
+
+Both mechanisms appear in pure form on trap items. G13 ("HA solutions are Newtonian fluids, so viscosity is a single constant"): the SFT model assents, repeating itself ("Yes, HA solutions are simple Newtonian fluids…"); with retrieval it corrects the premise ("No, HA solutions are not simple Newtonian fluids…"). G09 (highest-MW HA always best for joint injections): the SFT model rejects the absolute; SFT+RAG degenerates into a citation-marker loop ("[1] [4] [2] [3] …"). Retrieval rescues G13 and destroys G09.
+
+
+
+<TABLE>
+Per-question verdicts on the 15 trap items. Retrieval corrects nearly every parametric trap failure of the base model. The SFT+RAG cell reintroduces failures on items base+RAG answers correctly (G02, G06, G09, G12) — new failures, not residual ones (Section 7).
+
+8 Limitations
+
+The judge is one of the contestants. Open and trap items are graded by the SFT model itself (Section 5.3); fixed-key anchoring and the judge-free auto-graded control bound, but do not eliminate, the distortion.
+
+Residual key uncertainty. 28 of 240 keys (11.7%) remain uncertain drafts; verification changed 22 of 240 keys (9%) — an unchecked key set would have carried that error rate silently into every score — including the drafting model's own.
+
+Small cells. Multiple-choice rests on n=10: the SFT+RAG dip (0.700 vs. 0.900) is two questions; no conclusion drawn. Trap verdicts (n=15) are in Table 2.
+
+Attestation, not truth. The grounding filter's overlap (≥ 0.55) shows an answer is about a real passage, not that it states it correctly, so SFT data can encode teacher errors (Section 4.2); factual contamination of the same kind (cf. repetition inheritance, Section 7) cannot be excluded without expert audit.
+
+Decoding and scale. All results are a single greedy run, and repetition is decode-sensitive, so Mechanism 2's size is a property of model-plus-decoding; and one 8B model in one domain makes the pipeline and failure analysis — not any absolute score — the transferable claim.
+
+Replicability. Only the corpus query is HA-specific (harvest → clean → DAPT → self-SFT → bench → ablation, under USD 50): a template for small fields with open-access literatures, and a warning worth having before combining SFT with retrieval.
+
+9 Future Work
+
+One fix per mechanism (Section 7): retrieval-formatted SFT data for the format mismatch — examples in the exact inference format (question + retrieved excerpts + cited answer), predicted to move the combined cell above base+RAG; repetition filtering of teacher outputs for the inheritance, screening pairs by the failure's operational definition. Evaluation-side: re-grade with an external judge and settle the 28 uncertain keys.
+
+10 Data and Code Availability
+
+Code, corpus, benchmark (v3 keys + verification status), results: https://github.com/liukunli001/hyaluronan-expert-llm
+
+Weights: https://huggingface.co/liukunli/ha-expert-qwen3-8b (SFT model) and https://huggingface.co/liukunli/ha-expert-qwen3-8b-dapt (DAPT checkpoint)
+
+Retrieval index: https://huggingface.co/datasets/liukunli/ha-expert-index
+
+Demo: https://huggingface.co/spaces/liukunli/ha-expert-demo
+
+Corpus release: GitHub Release v0.1-data.
+
+Acknowledgements
+
+Thanks to the open-access publishers whose PMC deposits made the corpus possible, and to the Qwen, Hugging Face, vLLM, and FAISS communities.
+
+References
+
+1. Qwen Team. Qwen3 Technical Report. Alibaba Group, 2025.
+
+2. Wolf, T., et al. Transformers: State-of-the-Art Natural Language Processing. In Proceedings of EMNLP 2020: System Demonstrations.
+
+3. von Werra, L., et al. TRL: Transformer Reinforcement Learning. Hugging Face library, 2023.
+
+4. Jain, N., et al. NEFTune: Noisy Embeddings Improve Instruction Finetuning. arXiv:2310.05914, 2023.
+
+5. Penedo, G., et al. The FineWeb Datasets: Decanting the Web for the Finest Text Data at Scale. In Advances in Neural Information Processing Systems (NeurIPS), 2024. (FineWeb-Edu subset used for replay.)
+
+6. Kwon, W., et al. Efficient Memory Management for Large Language Model Serving with PagedAttention. In Proceedings of SOSP, 2023.
+
+7. Johnson, J., Douze, M., and Jégou, H. Billion-Scale Similarity Search with GPUs. IEEE Transactions on Big Data, 7(3):535–547, 2021.
+
+

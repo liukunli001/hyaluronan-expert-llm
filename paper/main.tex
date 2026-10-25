@@ -24,7 +24,7 @@ Benchmark for Hyaluronan Research}
 
 \author{Kunli Liu\\
 Independent Researcher, San Francisco Bay Area, USA\\
-\href{mailto:liukunli001@gmail.com}{liukunli001@gmail.com}}
+\href{mailto:liukunli@msu.edu}{liukunli@msu.edu}}
 
 \date{}
 
@@ -37,7 +37,7 @@ General-purpose LLMs handle specialized fields' literatures
 unreliably: fluent answers, often wrong on quantitative details and
 confident even when a premise is false. We study one such field ---
 hyaluronan (hyaluronic acid, HA) --- and ask how far a single researcher
-can go, on under USD 50 of cloud compute, toward a \emph{trustworthy}
+can go toward a \emph{trustworthy}
 domain model. We release (i) a corpus
 of 12,306 HA papers ($\sim$126M tokens); (ii) HA-Expert, a
 Qwen3-8B-Base model adapted in two stages --- domain-adaptive continued
@@ -73,7 +73,7 @@ claims with no checkable source).
 
 We address them with the standard toolkit (continued pretraining,
 instruction tuning, retrieval) under three small-lab constraints: (1) one
-rented GPU, total compute under USD 50; (2) no paid teacher: supervision
+rented GPU; (2) no paid teacher: supervision
 self-generated, then filtered; (3) trusted evaluation: reference answers
 \emph{checked against source text}, not merely model-written. Constraint
 (2) makes this a self-distillation exercise, whose risks we measure, not
@@ -117,6 +117,34 @@ recall.
 \textbf{DAPT sets.} A \emph{core set} of 4,952 papers (60.0M tokens) and
 an \emph{anneal set} of 498 papers (5.7M tokens) of reviews and methods
 papers, placed last, with 12\% FineWeb-Edu replay.
+
+\textbf{What the model reads.} Two samples from the released artifacts
+show the actual inputs. A corpus record (PMC10000474, \emph{Foods},
+2023) begins:
+\begin{quote}\small
+Hyaluronic acid (HA) is now widely known for its ability to bind water
+and impart texture. The combined effects of HA and kappa-carrageenan
+(KC) have not yet been investigated, though. In this study, we looked at
+the synergistic effects of HA and KC (concentrations of 0.1 and 0.25\%,
+and ratios of 85:15, 70:30, and 50:50 for each concentration) on the
+rheological properties, heat stability, protein phase separation,
+water-holding capacity, emulsification \ldots
+\end{quote}
+Retrieval chunks are $\approx$900-character windows cut across sentence
+boundaries; a chunk from the same paper begins mid-word:
+\begin{quote}\small
+ser protein phase separation and a higher water-holding capacity than
+when HA and KC were utilized separately. Similarly, for the sample with
+a 0.1\% concentration, the combination of HA + KC blends demonstrated a
+synergistic impact with greater emulsifying activity and stability. The
+samples with a concentration of 0.25\% did not exhibit this synergistic
+effect \ldots
+\end{quote}
+DAPT consumes record text like the first sample; SFT pairs are generated
+from such passages (Section~\ref{sec:sft-data}); at inference, chunks
+like the second are prepended to the question
+(Section~\ref{sec:rag}). Full readable samples are in
+\texttt{examples/sample-data.md} in the repository.
 
 \section{Methods}
 \label{sec:methods}
@@ -437,7 +465,7 @@ model-plus-decoding; and one 8B model in one domain makes the pipeline
 and failure analysis --- not any absolute score --- the transferable
 claim. \textbf{Replicability.} Only the corpus query is HA-specific
 (harvest $\rightarrow$ clean $\rightarrow$ DAPT $\rightarrow$ self-SFT
-$\rightarrow$ bench $\rightarrow$ ablation, under USD 50): a template for
+$\rightarrow$ bench $\rightarrow$ ablation): a template for
 small fields with open-access literatures, and a warning worth having
 \emph{before} combining SFT with retrieval.
 
@@ -451,6 +479,19 @@ answer), predicted to move the combined cell above base+RAG;
 \emph{repetition filtering} of teacher outputs for the inheritance,
 screening pairs by the failure's operational definition. Evaluation-side:
 re-grade with an external judge and settle the 28 uncertain keys.
+
+Beyond hyaluronan, three directions follow. \emph{Other domains:} the
+pipeline is domain-agnostic apart from the corpus query
+(Section~\ref{sec:limitations}), so the same recipe applies to other
+literature-bound fields --- heparin and other glycosaminoglycans, or
+bioconjugation chemistry. \emph{Ideation:} the released model already
+proposes novel research ideas and expands them into structured plans
+with hypotheses and experimental methods; adding corpus-scale novelty
+checking against the literature would turn that capability into a
+research tool. \emph{Review:} a model with verified command of a field's
+literature could serve as a first-pass reviewer of new submissions,
+checking claims against that literature --- a use that, like ideation,
+needs evidence-checked evaluation before it can be trusted.
 
 \section{Data and Code Availability}
 \label{sec:availability}

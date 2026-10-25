@@ -187,7 +187,7 @@ def fig1():
 # ---------------------------------------------------------------- Figure 2
 def fig2():
     # Designed at final print width 6.5in; fonts are true print sizes.
-    fig, axes = plt.subplots(1, 2, figsize=(6.5, 3.4),
+    fig, axes = plt.subplots(1, 2, figsize=(6.5, 3.6),
                              gridspec_kw={"width_ratios": [1, 1.85],
                                           "wspace": 0.26})
     # (a) overall
@@ -204,7 +204,7 @@ def fig2():
     ax.set_ylim(0, 0.84)
     ax.set_ylabel("Accuracy", fontsize=10.5)
     ax.set_title("(a) Overall accuracy", fontsize=11.5, loc="left",
-                 fontweight="bold", pad=64)
+                 fontweight="bold", pad=9)
     ax.tick_params(axis="y", labelsize=9.5)
     ax.spines[["top", "right"]].set_visible(False)
     ax.grid(axis="y", color="#DDDDDD", lw=0.7, zorder=0)
@@ -226,14 +226,17 @@ def fig2():
     ax.set_ylim(0, 1.13)
     ax.set_ylabel("Accuracy", fontsize=10.5)
     ax.set_title("(b) Accuracy by question type", fontsize=11.5, loc="left",
-                 fontweight="bold", pad=52)
-    ax.legend(fontsize=9, frameon=False, ncol=2, loc="lower left",
-              bbox_to_anchor=(-0.02, 1.01), handlelength=1.2,
-              handleheight=0.9, columnspacing=1.2)
+                 fontweight="bold", pad=9)
     ax.tick_params(axis="y", labelsize=9.5)
     ax.spines[["top", "right"]].set_visible(False)
     ax.grid(axis="y", color="#DDDDDD", lw=0.7, zorder=0)
     ax.set_axisbelow(True)
+
+    handles, labels = axes[1].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center",
+               bbox_to_anchor=(0.5, 1.03), ncol=4, frameon=False,
+               fontsize=8.6, handlelength=1.1, handleheight=0.9,
+               columnspacing=1.0)
 
     save(fig, "fig2-results")
 

@@ -42,8 +42,8 @@ hyaluronan (hyaluronic acid, HA). From a corpus of 12,306 HA papers
 ($\approx$126M tokens), we build HA-Expert by domain-adaptive
 continued pretraining of Qwen3-8B-Base (DAPT; 60M core + 5.7M anneal tokens) and
 full-parameter supervised fine-tuning (SFT) on 12,003
-question--answer pairs the DAPT model generated itself, retained by a
-grounding filter; at inference, retrieval over a 636,959-passage FAISS
+question--answer pairs that the DAPT model itself generated, retained
+by a grounding filter; at inference, retrieval over a 636,959-passage FAISS
 index can ground its answers. To measure trustworthiness rather than
 fluency, we construct HA-Expert-Bench: 240 questions whose keyed
 answers were confirmed or corrected by LLM verifiers shown only
@@ -53,7 +53,7 @@ fine-tuning doubles the base score (0.300 $\rightarrow$ 0.601) and
 retrieval is the largest single lever (base+RAG 0.710; traps 0.267
 $\rightarrow$ 0.867), yet the two do \textbf{not} compose additively
 (0.662). The shortfall traces to two mechanisms: a train/test format
-mismatch that collapses a model never trained on retrieved context
+mismatch that drives a model never trained on retrieved context
 into citation-marker loops (5 of 240 responses), and repetition
 inherited through self-distillation. The pipeline is domain-agnostic
 apart from the corpus query, so the recipe transfers to other fields
@@ -92,7 +92,7 @@ We address these failures with the standard toolkit --- continued
 pretraining, instruction tuning, and retrieval --- under three
 constraints that define the small-lab setting: (1) a single rented GPU;
 (2) no paid teacher model, so supervision is self-generated and then
-filtered; and (3) trusted evaluation, with reference answers
+filtered; and (3) evaluation that can be trusted: reference answers
 \emph{checked against source text} rather than merely model-written.
 Constraint (2) makes the training a self-distillation exercise; we
 therefore measure its risks rather than assume them away.
@@ -115,10 +115,10 @@ or biomedical models on specialized tasks: Tariq et
 al.~\cite{tariq2024}, for example, trained a 124M-parameter
 prostate-cancer model with a domain-specific tokenizer and UMLS-guided
 masked-term prediction, and it surpassed the three-times-larger BioGPT
-on clinical information prediction. Here, the route is instantiated
-with Qwen3-8B-Base and Qwen3-Embedding-0.6B~\cite{qwen3} in
-Transformers and TRL~\cite{transformers,trl}, with NEFTune
-noise~\cite{neftune} and general-domain replay~\cite{fineweb}.
+on clinical information prediction. Here we instantiate that route
+with Qwen3-8B-Base and Qwen3-Embedding-0.6B~\cite{qwen3}, using the
+Transformers and TRL libraries~\cite{transformers,trl}, NEFTune
+noise~\cite{neftune}, and general-domain replay~\cite{fineweb}.
 Self-generated instruction data risks distilling the generator's errors
 and habits unchecked; we guard against this with a grounding filter
 (Section~\ref{sec:sft-data}) and an evaluation designed to expose
@@ -133,8 +133,8 @@ score; our keys, by contrast, are evidence-verified
 \label{sec:corpus}
 
 \textbf{Harvest and cleaning.} We harvested PubMed Central's
-open-access subset, obtaining 16,642 records, of which 12,945 had
-retrievable JATS XML full text. Plain-text conversion, exact and near
+open-access subset, obtaining 16,642 records, of which 12,945 came
+with retrievable JATS XML full text. Plain-text conversion, exact and near
 deduplication, and language and length filtering left \textbf{12,306
 papers ($\approx$126M tokens)} (Table~\ref{tab:corpus}).
 
@@ -146,7 +146,7 @@ from them measure generalization rather than recall.
 \textbf{DAPT sets.} From the corpus we drew two DAPT sets: a
 \emph{core set} of 4,952 papers (60.0M tokens) and an \emph{anneal set}
 of 498 papers (5.7M tokens) consisting of reviews and methods papers,
-presented last during training, together with 12\% FineWeb-Edu replay.
+presented last during training, alongside 12\% FineWeb-Edu replay.
 
 \begin{table}[t]
 \centering
@@ -207,14 +207,15 @@ inference, chunks like the second are prepended to the question
 
 The system has three stages --- DAPT, SFT on self-generated data, and
 retrieval-augmented inference --- followed by evaluation on
-HA-Expert-Bench (Section~\ref{sec:bench}; Figure~\ref{fig:pipeline}),
-all run on a single rented GPU.
+HA-Expert-Bench (Section~\ref{sec:bench}; Figure~\ref{fig:pipeline});
+everything runs on a single rented GPU.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figs/fig1-pipeline.pdf}
 \caption{The HA-Expert pipeline. \textbf{Training:} the 12,306-paper
-corpus is tokenized for DAPT of Qwen3-8B-Base, which then generates its
+corpus is tokenized for domain-adaptive pretraining (DAPT) of
+Qwen3-8B-Base, which then generates its
 own grounding-filtered SFT data. \textbf{Retrieval:} the corpus is
 chunked into a FAISS index of 636,959 passages; the top-4 are prepended
 at inference (RAG on; off: parameters alone). \textbf{Evaluation:} all
@@ -341,7 +342,7 @@ graded by an LLM judge, which is shown the question, the
 evidence-checked reference answer, and the response, and returns
 correct / partial / wrong (1.0 / 0.5 / 0.0). The judge was the SFT
 model itself, served locally at no cost (for the resulting bias, see
-Section~\ref{sec:limitations}). Two safeguards bound this design:
+Section~\ref{sec:limitations}). Two safeguards limit the risk in this design:
 grading is anchored to the fixed, verified keys, and the 30
 automatically graded items serve as a judge-free control
 (Section~\ref{sec:experiments}). Outputs that could not be parsed
@@ -473,10 +474,10 @@ distilled; retrieval lowers both counts. The annotation marks Mechanism
 \subsection{Case studies}
 
 Both mechanisms appear in pure form on the trap items.
-Table~\ref{tab:example} works one trap question end to end. On
+Table~\ref{tab:example} traces one trap question end to end. On
 \textbf{G09} --- the claim that the highest-molecular-weight HA is
 always best for joint injections --- the SFT model correctly rejects
-the absolute, yet SFT+RAG degenerates into a citation-marker loop
+the absolute claim, yet SFT+RAG degenerates into a citation-marker loop
 (``[1] [4] [2] [3] $\ldots$''). Retrieval thus rescues G13 and
 destroys G09.
 
@@ -578,8 +579,8 @@ is the pipeline and its failure analysis, not any absolute score.
 \textbf{Replicability.} Only the corpus query is HA-specific; the
 remaining pipeline (harvest $\rightarrow$ clean $\rightarrow$ DAPT
 $\rightarrow$ self-SFT $\rightarrow$ bench $\rightarrow$ ablation) is a
-template for small fields with open-access literatures --- and a
-warning worth having \emph{before} combining SFT with retrieval.
+template for small fields with open-access literatures --- and its
+warning is worth heeding \emph{before} combining SFT with retrieval.
 
 \section{Future Work}
 \label{sec:future}

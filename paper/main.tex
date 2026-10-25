@@ -36,8 +36,8 @@ Independent Researcher, San Francisco Bay Area, USA\\
 General-purpose large language models answer questions about
 specialized scientific fields fluently but unreliably: they err
 on quantitative details and remain confident even when a question rests
-on a false premise. We ask what a single researcher, without
-datacenter resources, can do about one such field ---
+on a false premise. We ask what a single researcher
+can do about one such field ---
 hyaluronan (hyaluronic acid, HA). From a corpus of 12,306 HA papers
 ($\approx$126M tokens), we build HA-Expert by domain-adaptive
 continued pretraining of Qwen3-8B-Base (DAPT; 60M core + 5.7M anneal tokens) and
@@ -175,7 +175,7 @@ or later, spread across 1,819 journals.}
 \end{table}
 
 \textbf{What the model reads.} Two samples from the released artifacts
-illustrate the actual inputs. A corpus record (PMC10000474,
+illustrate the inputs. A corpus record (PMC10000474,
 \emph{Foods}, 2023) begins:
 \begin{quote}\small
 Hyaluronic acid (HA) is now widely known for its ability to bind water
@@ -412,7 +412,7 @@ $\rightarrow$ 0.500) but remains unreliable.
 \subsection{Retrieval is the largest single lever}
 
 Base+RAG scores 0.710, above the full pipeline without retrieval
-(0.601). The effect is largest precisely where parametric knowledge is
+(0.601). The effect is largest where parametric knowledge is
 least reliable: trap accuracy rises from 0.267 to 0.867, and four of
 the base model's eight parametric trap failures (G01, G11, G13, G14)
 are corrected by both retrieval cells. A false premise is hard to
@@ -555,7 +555,7 @@ ones (Section~\ref{sec:analysis}).}
 
 \textbf{The judge is one of the contestants.} Open and trap items are
 graded by the SFT model itself (Section~\ref{sec:grading}). Fixed-key
-anchoring and the judge-free, auto-graded control bound the resulting
+anchoring and the judge-free, auto-graded control bound the
 distortion but do not eliminate it.
 \textbf{Residual key uncertainty.} Twenty-eight of 240 keys (11.7\%)
 remain uncertain drafts. Verification \emph{changed} 22 of 240 keys

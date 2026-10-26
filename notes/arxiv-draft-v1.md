@@ -1,4 +1,4 @@
-# HA-Expert: A Domain-Adapted Language Model and Evidence-Checked Benchmark for Hyaluronan Research
+# HA-Expert: A Domain-Adapted Language Model for Hyaluronan Research
 
 **Kunli Liu**
 Independent Researcher, San Francisco Bay Area

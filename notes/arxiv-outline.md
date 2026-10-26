@@ -3,7 +3,7 @@
 类别：cs.CL（可 cross-list cs.LG / q-bio.BM）。定位纪律（与 bioRxiv 相反）：标题与摘要以
 训练与评测方法领起，透明质酸是验证领域——这是给 CS 读者看的论文。
 
-**拟题**：HA-Expert: A Domain-Adapted Language Model and Evidence-Checked Benchmark
+**拟题**：HA-Expert: A Domain-Adapted Language Model for Hyaluronan Research
 for Hyaluronan Research
 
 **摘要骨架**（约 250 词）：领域问题（HA 文献分散、跨糖化学/材料/临床）→ 资源：
